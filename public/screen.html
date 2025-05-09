@@ -386,7 +386,8 @@
         // Update colors based on cover
         if (data.cover) {
           const img = new Image();
-          img.crossOrigin = "Anonymous";
+
+          img.crossOrigin = "Anonymous"; // Permet de charger l'image depuis un autre domaine
           img.src = data.cover;
 
           img.onload = () => {
