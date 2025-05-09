@@ -44,14 +44,19 @@
       ><input type="checkbox" id="toggleMessage" onchange="envoyer()" />
       Afficher un message</label
     >
-    <label
-      ><input type="checkbox" id="toggleMusic" onchange="envoyer()" /> Afficher
-      la musique</label
-    >
+    <label>
+      <input type="checkbox" id="toggleMusic" onchange="envoyer()" />
+      Afficher la musique
+    </label>
+    <label>
+      <input type="checkbox" id="showForecast" onchange="envoyer()" />
+      Afficher les prévisions météo
+    </label>
 
     <label
       >Message : <input type="text" id="message" oninput="envoyer()"
     /></label>
+
     <label
       >Couleur principale :
       <input
@@ -73,9 +78,11 @@
           showWeather: document.getElementById("toggleWeather").checked,
           showMessage: document.getElementById("toggleMessage").checked,
           showMusic: document.getElementById("toggleMusic").checked,
+          showForecast: document.getElementById("showForecast").checked,
           message: document.getElementById("message").value,
           themeColor: document.getElementById("themeColor").value,
         };
+        console.log(data);
         socket.emit("updateContent", data);
       }
     </script>

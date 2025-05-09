@@ -14,34 +14,14 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/color-thief/2.3.2/color-thief.umd.js"></script>
 
     <style>
-      .weather-icon {
-        width: 64px;
-        height: 64px;
-        margin-right: 12px;
-        filter: drop-shadow(0 0 4px rgba(0, 0, 0, 0.2));
-        animation: fadeIn 0.8s ease;
-      }
-
-      @keyframes fadeIn {
-        from {
-          opacity: 0;
-          transform: scale(0.95);
-        }
-        to {
-          opacity: 1;
-          transform: scale(1);
-        }
-      }
-    </style>
-    <style>
       :root {
-        --primary: #00bcd4; /* Cyan vibrant */
-        --background: #0f1115; /* Noir bleuté */
-        --foreground: #f1f1f1; /* Blanc doux */
-        --card: #1e293b; /* Bleu gris foncé */
-        --accent: #80deea; /* Cyan clair */
-        --accent-color: #ff4081; /* Rose Material */
-        --secondary: #ffca28; /* Jaune doré */
+        --primary: #00bcd4;
+        --background: #0f1115;
+        --foreground: #f1f1f1;
+        --card: #1e293b;
+        --accent: #80deea;
+        --accent-color: #ff4081;
+        --secondary: #ffca28;
         --border-radius: 2rem;
         --shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
       }
@@ -53,12 +33,14 @@
         margin: 0;
         padding: 2rem;
         display: flex;
-        flex-direction: column;
-        gap: 2rem;
-        align-items: center;
+        flex-direction: row;
+        flex-wrap: wrap;
         justify-content: center;
+        gap: 2rem;
         min-height: 100vh;
-        transition: background-color 0.5s ease;
+        overflow: hidden;
+        align-items: center;
+        height: 100%;
       }
 
       .card {
@@ -66,31 +48,86 @@
         padding: 2rem;
         border-radius: var(--border-radius);
         box-shadow: var(--shadow);
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        width: 300px;
+        height: 150px;
+        transition: all 0.3s ease-in-out;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        overflow: hidden;
+        animation: fadeIn 0.8s ease;
+        max-height: 100%;
       }
 
       .card:hover {
-        transform: scale(1.02);
+        transform: scale(1.05);
         box-shadow: 0 10px 24px rgba(0, 0, 0, 0.5);
       }
 
       .time {
-        font-size: 5em;
+        font-size: 4.5em;
         font-weight: 700;
         color: var(--primary);
         text-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
       }
 
       .weather {
-        font-size: 1.5em;
+        font-size: 1.2em;
         color: var(--secondary);
       }
 
       .message {
-        font-size: 2.5em;
+        font-size: 2em;
         color: var(--accent);
         font-weight: 500;
         text-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+      }
+      .weather-icon {
+        max-width: 150px;
+        max-height: 150px;
+        width: 100%;
+        height: auto;
+        margin-bottom: 0.5rem;
+        object-fit: contain;
+      }
+
+      #forecastCard.card {
+        width: 100%;
+      }
+
+      #forecast {
+        display: grid;
+        gap: 1rem;
+        grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+        width: 100%;
+        padding-top: 1rem;
+      }
+
+      .forecast-item {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 1rem;
+        padding: 0.5rem;
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      .forecast-time {
+        font-size: 0.9em;
+        font-weight: 600;
+      }
+
+      .forecast-temp {
+        font-size: 1.2em;
+        margin-top: 0.25rem;
+      }
+
+      .forecast-icon {
+        width: 40px;
+        height: 40px;
+        margin: 0.5rem 0;
       }
 
       #musicCard.card {
@@ -98,9 +135,9 @@
         color: white;
         padding: 1.5rem;
         gap: 1rem;
-        width: 340px;
-        border-radius: var(--border-radius);
-        box-shadow: var(--shadow);
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
       }
 
       .cover-img {
@@ -113,6 +150,7 @@
 
       .music-info {
         flex: 1;
+        text-align: center;
       }
 
       .music-info strong {
@@ -141,6 +179,36 @@
         width: 0%;
         transition: width 1s linear;
         border-radius: 3px;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: scale(0.95);
+        }
+        to {
+          opacity: 1;
+          transform: scale(1);
+        }
+      }
+
+      @keyframes fadeOut {
+        from {
+          opacity: 1;
+          transform: scale(1);
+        }
+        to {
+          opacity: 0;
+          transform: scale(0.95);
+        }
+      }
+
+      .card.hidden {
+        animation: fadeOut 0.3s forwards;
+      }
+
+      .card:not(.hidden) {
+        animation: fadeIn 0.3s forwards;
       }
 
       .hidden {
@@ -175,6 +243,10 @@
       </div>
     </div>
 
+    <div id="forecastCard" class="card hidden">
+      <div id="forecast" class="weather"></div>
+    </div>
+
     <script src="/socket.io/socket.io.js"></script>
     <script>
       const socket = io();
@@ -197,6 +269,8 @@
       const weatherCard = document.getElementById("weatherCard");
       const messageCard = document.getElementById("messageCard");
       const musicCard = document.getElementById("musicCard");
+      const forecastCard = document.getElementById("forecastCard");
+      const forecastEl = document.getElementById("forecast");
 
       const trackEl = document.getElementById("track");
       const artistEl = document.getElementById("artist");
@@ -212,7 +286,9 @@
         timeCard.classList.toggle("hidden", !config.showTime);
         weatherCard.classList.toggle("hidden", !config.showWeather);
         messageCard.classList.toggle("hidden", !config.showMessage);
-        musicCard.classList.toggle("hidden", !config.showMusic);
+        forecastCard.classList.toggle("hidden", !config.showForecast);
+
+        // musicCard.classList.toggle("hidden", !config.showMusic);
         messageEl.textContent = config.message || "";
         updateTheme(config.themeColor);
       }
@@ -240,12 +316,57 @@
           });
       }
 
+      function getForecast() {
+        if (!config.showForecast) return;
+
+        fetch("/api/forecast")
+          .then((res) => res.json())
+          .then((data) => {
+            forecastEl.innerHTML = ""; // Clear previous forecast
+            data.list.forEach((f) => {
+              const time = new Date(f.dt * 1000).toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit",
+              });
+              forecastEl.innerHTML += `
+                <div class="forecast-item">
+                  <div class="forecast-time">${time}</div>
+                  <img class="forecast-icon" src="/weather-icons/${
+                    f.icon
+                  }.svg" />
+                  <div class="forecast-temp">${Math.round(f.temp)}°C</div>
+
+                </div>`;
+            });
+            //   forecastEl.innerHTML = data.list
+            //     .slice(0, 5)
+            //     .map((f) => {
+            //       const time = new Date(f.dt * 1000).toLocaleTimeString([], {
+            //         hour: "2-digit",
+            //         minute: "2-digit",
+            //       });
+            //       console.log(f);
+            //       return `
+            // <div class="forecast-item">
+            //   <div class="forecast-time">${time}</div>
+            //   <img class="forecast-icon" src="/weather-icons/${
+            //     f.weather[0].icon
+            //   }.svg" />
+            //   <div class="forecast-temp">${Math.round(f.main.temp)}°C</div>
+            // </div>`;
+            //     })
+            //     .join("");
+          });
+      }
+
       socket.on("displayContent", (data) => {
         config = { ...config, ...data };
         updateDisplay();
         if (config.showWeather) getWeather();
+        if (config.showForecast) getForecast();
       });
 
+      let musicTimeout;
       socket.on("musicData", (data) => {
         const musicCard = document.getElementById("musicCard");
         const track = document.getElementById("track");
@@ -253,34 +374,55 @@
         const cover = document.getElementById("cover");
         const progressBar = document.getElementById("progressBar");
 
-        track.textContent = data.title;
-        artist.textContent = data.artist;
-        cover.src = data.cover || "placeholder.png";
-
-        // Si une image de cover est disponible, extraire la couleur dominante
-        if (data.cover) {
-          const img = new Image();
-          img.src = data.cover;
-          img.onload = () => {
-            const colorThief = new ColorThief();
-            const dominantColor = colorThief.getColor(img); // Récupère la couleur dominante de la cover
-            const rgbColor = `rgb(${dominantColor[0]}, ${dominantColor[1]}, ${dominantColor[2]})`;
-            musicCard.style.backgroundColor = rgbColor; // Applique cette couleur comme fond de la carte de musique
-          };
+        if (musicTimeout) {
+          clearTimeout(musicTimeout);
         }
 
-        // Calcul de la progression de la musique
-        const progress =
-          data.position && data.duration
-            ? (data.position / data.duration) * 100
-            : 0;
-        progressBar.style.width = `${progress}%`;
+        setTimeout(() => {
+          track.textContent = data.title;
+          artist.textContent = data.artist;
+          cover.src = data.cover || "placeholder.png";
 
-        // Affichage ou masquage de la carte de musique en fonction de la configuration
-        if (config.showMusic) {
-          musicCard.classList.remove("hidden");
-        } else {
-          musicCard.classList.add("hidden");
+          if (data.cover) {
+            const img = new Image();
+            img.crossOrigin = "Anonymous";
+            img.src = data.cover;
+
+            img.onload = () => {
+              const colorThief = new ColorThief();
+              const dominantColor = colorThief.getColor(img);
+              const rgbColor = `rgb(${dominantColor[0]}, ${dominantColor[1]}, ${dominantColor[2]})`;
+              musicCard.style.setProperty("background", rgbColor, "important");
+
+              const [r, g, b] = dominantColor;
+              const luminance = 0.299 * r + 0.587 * g + 0.114 * b;
+              const textColor = luminance > 186 ? "#000000" : "#ffffff";
+              track.style.color = textColor;
+              artist.style.color = textColor;
+            };
+          }
+
+          setInterval(() => {
+            // update weather every 10 minutes
+            getWeather();
+            getForecast();
+          }, 10 * 60 * 1000); // 10 minutes
+
+          const progress =
+            data.position && data.duration
+              ? (data.position / data.duration) * 100
+              : 0;
+          progressBar.style.width = `${progress}%`;
+
+          if (config.showMusic) {
+            musicCard.classList.remove("hidden");
+          }
+        }, 300);
+        const remaining = data.duration - data.position;
+        if (remaining > 0) {
+          musicTimeout = setTimeout(() => {
+            musicCard.classList.add("hidden");
+          }, remaining * 1000); // en ms
         }
       });
     </script>
