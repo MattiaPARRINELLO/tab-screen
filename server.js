@@ -13,7 +13,7 @@ dotenv.config();
 
 const PORT = process.env.PORT || 3000;
 const OPENWEATHER_API_KEY = process.env.OPENWEATHER_API_KEY
-const VILLE = 'Franconville, 95130' // Ville par défaut;
+const VILLE = 'Franconville' // Ville par défaut;
 const VILLE_SHORT = 'Franconville' // Ville courte pour l'affichage
 const LASTFM_API_KEY = process.env.LASTFM_API_KEY
 
@@ -120,7 +120,7 @@ app.get('/screen', (req, res) => {
 app.get('/api/weather', async (req, res) => {
     try {
         const [lat, lon] = convertVilleToCoords(VILLE);
-        const url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=metric&lang=fr&appid=${OPENWEATHER_API_KEY}`;
+        const url = `https://api.openweathermap.org/data/2.5/weather?q=${VILLE_SHORT}&units=metric&lang=fr&appid=${OPENWEATHER_API_KEY}`;
         console.log('URL:', url);
         const response = await fetch(url);
         const data = await response.json();
@@ -143,7 +143,7 @@ app.get("/api/forecast", async (req, res) => {
     console.log("Requête prévisions météo reçue");
     try {
         const [lat, lon] = convertVilleToCoords(VILLE);
-        const url = `https://api.openweathermap.org/data/2.5/forecast/?lat=${lat}&lon=${lon}&units=metric&appid=${OPENWEATHER_API_KEY}`;
+        const url = `https://api.openweathermap.org/data/2.5/forecast/?q=${VILLE_SHORT}&units=metric&appid=${OPENWEATHER_API_KEY}`;
         const response = await fetch(url);
         const data = await response.json();
 
