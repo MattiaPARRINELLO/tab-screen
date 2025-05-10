@@ -367,6 +367,11 @@
       });
 
       let musicTimeout;
+      let progressInterval;
+      let musicStartTime;
+      let musicInitialPosition = 0;
+      let musicDuration = 0;
+
       socket.on("musicData", (data) => {
         const musicCard = document.getElementById("musicCard");
         const track = document.getElementById("track");
@@ -374,55 +379,68 @@
         const cover = document.getElementById("cover");
         const progressBar = document.getElementById("progressBar");
 
-        if (musicTimeout) {
-          clearTimeout(musicTimeout);
+        // Reset timeout and interval
+        if (musicTimeout) clearTimeout(musicTimeout);
+        if (progressInterval) clearInterval(progressInterval);
+
+        // Update music info
+        track.textContent = data.title;
+        artist.textContent = data.artist;
+        cover.src = data.cover || "placeholder.png";
+
+        // Store values
+        musicInitialPosition = data.position || 0;
+        musicDuration = data.duration || 0;
+        musicStartTime = Date.now();
+
+        // Update colors based on cover
+        if (data.cover) {
+          const img = new Image();
+          img.crossOrigin = "Anonymous";
+          img.src = data.cover;
+
+          img.onload = () => {
+            const colorThief = new ColorThief();
+            const dominantColor = colorThief.getColor(img);
+            const rgbColor = `rgb(${dominantColor[0]}, ${dominantColor[1]}, ${dominantColor[2]})`;
+            musicCard.style.setProperty("background", rgbColor, "important");
+
+            const [r, g, b] = dominantColor;
+            const luminance = 0.299 * r + 0.587 * g + 0.114 * b;
+            const textColor = luminance > 186 ? "#000000" : "#ffffff";
+            track.style.color = textColor;
+            artist.style.color = textColor;
+          };
         }
 
-        setTimeout(() => {
-          track.textContent = data.title;
-          artist.textContent = data.artist;
-          cover.src = data.cover || "placeholder.png";
+        // Show music card
+        if (config.showMusic) {
+          musicCard.classList.remove("hidden");
+        }
 
-          if (data.cover) {
-            const img = new Image();
-            img.crossOrigin = "Anonymous";
-            img.src = data.cover;
-
-            img.onload = () => {
-              const colorThief = new ColorThief();
-              const dominantColor = colorThief.getColor(img);
-              const rgbColor = `rgb(${dominantColor[0]}, ${dominantColor[1]}, ${dominantColor[2]})`;
-              musicCard.style.setProperty("background", rgbColor, "important");
-
-              const [r, g, b] = dominantColor;
-              const luminance = 0.299 * r + 0.587 * g + 0.114 * b;
-              const textColor = luminance > 186 ? "#000000" : "#ffffff";
-              track.style.color = textColor;
-              artist.style.color = textColor;
-            };
-          }
-
-          setInterval(() => {
-            // update weather every 10 minutes
-            getWeather();
-            getForecast();
-          }, 10 * 60 * 1000); // 10 minutes
-
-          const progress =
-            data.position && data.duration
-              ? (data.position / data.duration) * 100
-              : 0;
+        // Start progress animation
+        progressInterval = setInterval(() => {
+          const elapsed = (Date.now() - musicStartTime) / 1000; // en secondes
+          const currentPosition = musicInitialPosition + elapsed;
+          const progress = Math.min(
+            (currentPosition / musicDuration) * 100,
+            100
+          );
           progressBar.style.width = `${progress}%`;
 
-          if (config.showMusic) {
-            musicCard.classList.remove("hidden");
+          if (currentPosition >= musicDuration) {
+            clearInterval(progressInterval);
+            musicCard.classList.add("hidden");
           }
-        }, 300);
-        const remaining = data.duration - data.position;
+        }, 1000);
+
+        // Hide card when song ends
+        const remaining = musicDuration - musicInitialPosition;
         if (remaining > 0) {
           musicTimeout = setTimeout(() => {
             musicCard.classList.add("hidden");
-          }, remaining * 1000); // en ms
+            clearInterval(progressInterval);
+          }, remaining * 1000);
         }
       });
     </script>
