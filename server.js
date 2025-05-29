@@ -7,9 +7,9 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 const dotenv = require('dotenv');
+const fs = require('fs')
 
 dotenv.config();
-
 
 const PORT = process.env.PORT || 3000;
 const OPENWEATHER_API_KEY = process.env.OPENWEATHER_API_KEY
@@ -17,28 +17,25 @@ const VILLE = 'Franconville' // Ville par défaut;
 const VILLE_SHORT = 'Franconville' // Ville courte pour l'affichage
 const LASTFM_API_KEY = process.env.LASTFM_API_KEY
 
-function convertVilleToCoords(ville) {
+async function convertVilleToCoords(ville) {
     // http://api.openweathermap.org/geo/1.0/direct?q={city name},{state code},{country code}&limit={limit}&appid={API key}
     try {
         const url = `http://api.openweathermap.org/geo/1.0/direct?q=${ville}&limit=1&appid=${OPENWEATHER_API_KEY}`;
-        fetch(url)
-            .then(response => response.json())
-            .then(data => {
-                if (data.length > 0) {
-                    const { lat, lon } = data[0];
-                    console.log(`Coordonnées de ${ville}: Latitude: ${lat}, Longitude: ${lon}`);
-                    return [lat, lon];
-                } else {
-                    console.error('Ville non trouvée');
-                }
-            })
-            .catch(err => console.error('Erreur:', err));
-    }
-    catch (err) {
+        const response = await fetch(url);
+        const data = await response.json();
+        if (data.length > 0) {
+            const { lat, lon } = data[0];
+            console.log(`Coordonnées de ${ville}: Latitude: ${lat}, Longitude: ${lon}`);
+            return [lat, lon];
+        } else {
+            console.error('Ville non trouvée');
+        }
+    } catch (err) {
         console.error('Erreur:', err);
     }
     return [0, 0]; // Valeurs par défaut si la ville n'est pas trouvée
 }
+
 let currentConfig = {
     showTime: true,
     showWeather: true,
@@ -108,10 +105,36 @@ const weatherIconMap = {
     '26n': 'cloudy_with_snow_dark'
 }
 
-
 app.get('/', (req, res) => {
     res.sendFile(__dirname + '/public/index.html');
 });
+
+app.get('/api/get-current-config', (req, res) => {
+    fs.readFile('current-config.json', 'utf8', (err, data) => {
+        if (err) {
+            console.error('Erreur lecture fichier config:', err);
+            return res.status(500).json({ error: 'Erreur lecture config' });
+        }
+        res.json(JSON.parse(data));
+    });
+});
+
+app.post('/api/save-config', (req, res) => {
+    const config = req.body;
+    if (!config) {
+        return res.status(400).json({ error: 'Configuration manquante' });
+    }
+
+    fs.writeFile('current-config.json', JSON.stringify(config, null, 2), (err) => {
+        if (err) {
+            console.error('Erreur écriture fichier config:', err);
+            return res.status(500).json({ error: 'Erreur écriture config' });
+        }
+        currentConfig = config; // Met à jour la configuration actuelle
+        io.emit('displayContent', currentConfig); // Émet l'événement pour mettre à jour les clients
+        res.json({ success: true });
+    });
+})
 
 app.get('/screen', (req, res) => {
     res.sendFile(__dirname + '/public/screen.html');
@@ -119,8 +142,8 @@ app.get('/screen', (req, res) => {
 
 app.get('/api/weather', async (req, res) => {
     try {
-        const [lat, lon] = convertVilleToCoords(VILLE);
-        const url = `https://api.openweathermap.org/data/2.5/weather?q=${VILLE_SHORT}&units=metric&lang=fr&appid=${OPENWEATHER_API_KEY}`;
+        const [lat, lon] = await convertVilleToCoords(VILLE);
+        const url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=metric&lang=fr&appid=${OPENWEATHER_API_KEY}`;
         console.log('URL:', url);
         const response = await fetch(url);
         const data = await response.json();
@@ -142,10 +165,11 @@ app.get('/api/weather', async (req, res) => {
 app.get("/api/forecast", async (req, res) => {
     console.log("Requête prévisions météo reçue");
     try {
-        const [lat, lon] = convertVilleToCoords(VILLE);
-        const url = `https://api.openweathermap.org/data/2.5/forecast/?q=${VILLE_SHORT}&units=metric&appid=${OPENWEATHER_API_KEY}`;
+        const [lat, lon] = await convertVilleToCoords(VILLE);
+        const url = `https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&units=metric&appid=${OPENWEATHER_API_KEY}`;
         const response = await fetch(url);
         const data = await response.json();
+        console.log("Données prévisions météo reçues:", data);
 
         const simplified = data.list.slice(0, 5).map(f => {
             const iconCode = f.weather[0].icon;

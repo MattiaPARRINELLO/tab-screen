@@ -261,6 +261,16 @@
         color: "#00aaff",
       };
 
+      // Get current configuration from the server
+      fetch("/api/get-current-config")
+        .then((res) => res.json())
+        .then((data) => {
+          config = data;
+          updateDisplay();
+          if (config.showWeather) getWeather();
+          if (config.showForecast) getForecast();
+        });
+
       const timeEl = document.getElementById("time");
       const weatherEl = document.getElementById("weather");
       const weatherIconEl = document.getElementById("weatherIcon");

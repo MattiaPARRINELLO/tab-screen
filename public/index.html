@@ -71,6 +71,21 @@
     <script>
       const socket = io();
 
+      // Get current settings from the server
+      fetch("api/get-current-config")
+        .then((response) => response.json())
+        .then((data) => {
+          document.getElementById("toggleTime").checked = data.showTime;
+          document.getElementById("toggleSeconds").checked = data.showSeconds;
+          document.getElementById("toggleWeather").checked = data.showWeather;
+          document.getElementById("toggleMessage").checked = data.showMessage;
+          document.getElementById("toggleMusic").checked = data.showMusic;
+          document.getElementById("showForecast").checked = data.showForecast;
+          document.getElementById("message").value = data.message || "";
+          document.getElementById("themeColor").value =
+            data.themeColor || "#3367d6";
+        });
+
       function envoyer() {
         const data = {
           showTime: document.getElementById("toggleTime").checked,
@@ -82,8 +97,25 @@
           message: document.getElementById("message").value,
           themeColor: document.getElementById("themeColor").value,
         };
-        console.log(data);
+
+        // Send the updated settings to the server
+        console.log("Sending data:", data);
         socket.emit("updateContent", data);
+        //make a POST request to the server
+        fetch("api/save-config", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(data),
+        })
+          .then((response) => response.json())
+          .then((result) => {
+            console.log("Configuration saved:", result);
+          })
+          .catch((error) => {
+            console.error("Error saving configuration:", error);
+          });
       }
     </script>
   </body>
