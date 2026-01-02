@@ -1150,11 +1150,6 @@
                   rgba(${r * 0.7}, ${g * 0.7}, ${b * 0.7}, 0.2) 100%
                 )
               `;
-
-              // Adjust text color based on luminance
-              const textColor = luminance > 128 ? "#0A0E14" : "#F8FAFC";
-              trackEl.style.color = textColor;
-              artistEl.style.color = textColor;
             } catch (e) {
               console.error("Color extraction failed:", e);
             }
