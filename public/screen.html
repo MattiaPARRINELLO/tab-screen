@@ -223,6 +223,9 @@
         display: flex;
         align-items: center;
         justify-content: center;
+        overflow: hidden;
+        white-space: nowrap;
+        padding: 0 var(--gap-sm);
       }
 
       @keyframes timeGlow {
@@ -299,6 +302,11 @@
         flex-direction: column;
         background: var(--bg-card-hover);
         border: 1px solid rgba(78, 205, 196, 0.15);
+        transition: grid-row var(--duration-normal) var(--ease-smooth);
+      }
+
+      #forecastCard.expanded {
+        grid-row: 1 / 11;
       }
 
       #forecastCard::before {
@@ -321,6 +329,10 @@
         flex: 1;
         align-items: stretch;
         height: 100%;
+      }
+
+      #forecastCard.expanded .forecast-grid {
+        gap: var(--gap-md);
       }
 
       .forecast-item {
@@ -353,12 +365,23 @@
         width: 48px;
         height: 48px;
         filter: drop-shadow(0 2px 8px rgba(78, 205, 196, 0.2));
+        transition: all var(--duration-normal) var(--ease-smooth);
+      }
+
+      #forecastCard.expanded .forecast-icon {
+        width: 72px;
+        height: 72px;
       }
 
       .forecast-temp {
         font-size: 1.5rem;
         font-weight: 700;
         color: var(--text-primary);
+        transition: font-size var(--duration-normal) var(--ease-smooth);
+      }
+
+      #forecastCard.expanded .forecast-temp {
+        font-size: 2rem;
       }
 
       .forecast-desc {
@@ -596,6 +619,14 @@
             el.classList.toggle("hidden", !show);
           }, delay);
         });
+
+        // Expand forecast when music is hidden
+        updateForecastLayout();
+      }
+
+      function updateForecastLayout() {
+        const musicHidden = musicCard.classList.contains("hidden");
+        forecastCard.classList.toggle("expanded", musicHidden);
       }
 
       // ========== CLOCK ==========
@@ -726,6 +757,7 @@
 
         // Show music card with animation
         musicCard.classList.remove("hidden");
+        updateForecastLayout();
 
         // Smooth progress animation
         progressInterval = setInterval(() => {
@@ -757,6 +789,7 @@
         if (progressInterval) clearInterval(progressInterval);
         progressBar.style.width = "0%";
         if (musicDurationEl) musicDurationEl.textContent = "0:00";
+        updateForecastLayout();
       }
 
       function formatTime(seconds) {
