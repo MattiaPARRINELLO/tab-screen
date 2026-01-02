@@ -653,18 +653,8 @@
 
       /* Responsive lyrics */
       @media (max-width: 1400px) {
-        .lyrics-container {
-          max-width: 360px;
-        }
-
         .lyrics-line {
           font-size: 1.25rem;
-        }
-      }
-
-      @media (max-width: 1100px) {
-        .lyrics-container {
-          display: none;
         }
       }
 
@@ -713,7 +703,7 @@
             <div class="lyrics-content" id="lyricsContent"></div>
           </div>
         </div>
-        
+
         <!-- MUSIC INFO BOTTOM -->
         <div class="music-bottom">
           <div class="music-cover-wrapper">
@@ -743,6 +733,10 @@
         showWeather: true,
         showForecast: true,
         showSeconds: true,
+        // Delay (in seconds) to apply to lyrics timing. Useful to compensate
+        // network/request latency or clock offsets. Can be changed at runtime
+        // via `setLyricsDelay(seconds)` or provided per-track via socket.
+        lyricsDelaySeconds: 0.1,
       };
 
       // ========== DOM ELEMENTS ==========
@@ -1051,9 +1045,28 @@
 
         lyricsInterval = setInterval(() => {
           const elapsed = (Date.now() - musicStartTime) / 1000;
-          const currentTime = musicInitialPosition + elapsed;
+          // Apply optional lyrics delay here so the active line selection
+          // can be shifted forward/backward to compensate for latency.
+          const currentTime =
+            musicInitialPosition + elapsed + (config.lyricsDelaySeconds || 0);
           updateActiveLyric(currentTime);
         }, 100);
+      }
+
+      /**
+       * Set lyrics delay in seconds at runtime. Positive values delay lyrics
+       * (show later), negative values advance them (show earlier).
+       */
+      function setLyricsDelay(seconds) {
+        if (typeof seconds !== "number" || isNaN(seconds)) return;
+        config.lyricsDelaySeconds = seconds;
+
+        // If sync is running, restart to immediately apply the new delay
+        if (lyricsInterval) {
+          clearInterval(lyricsInterval);
+          lyricsInterval = null;
+          startLyricsSync();
+        }
       }
 
       /**
