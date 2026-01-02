@@ -537,12 +537,12 @@
         <div class="music-info">
           <div class="music-track" id="track">Titre</div>
           <div class="music-artist" id="artist">Artiste</div>
-            <div class="music-progress-row">
-              <div class="music-progress">
-                <div class="music-progress-bar" id="progressBar"></div>
-              </div>
-              <div class="music-duration" id="musicDuration">0:00</div>
+          <div class="music-progress-row">
+            <div class="music-progress">
+              <div class="music-progress-bar" id="progressBar"></div>
             </div>
+            <div class="music-duration" id="musicDuration">0:00</div>
+          </div>
         </div>
       </div>
     </div>
@@ -690,7 +690,8 @@
         musicInitialPosition = data.position || 0;
         musicDuration = data.duration || 0;
         // Afficher la durée totale formatée
-        if (musicDurationEl) musicDurationEl.textContent = formatTime(musicDuration);
+        if (musicDurationEl)
+          musicDurationEl.textContent = formatTime(musicDuration);
         musicStartTime = Date.now();
 
         // Extract dominant color from cover
