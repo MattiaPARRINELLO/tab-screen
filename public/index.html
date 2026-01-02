@@ -26,97 +26,12 @@
     </style>
   </head>
   <body>
-    <h1>Contrôle de l'écran</h1>
-
-    <label
-      ><input type="checkbox" id="toggleTime" onchange="envoyer()" /> Afficher
-      l'heure</label
-    >
-    <label
-      ><input type="checkbox" id="toggleSeconds" onchange="envoyer()" />
-      Afficher les secondes</label
-    >
-    <label
-      ><input type="checkbox" id="toggleWeather" onchange="envoyer()" />
-      Afficher la météo</label
-    >
-    <label
-      ><input type="checkbox" id="toggleMessage" onchange="envoyer()" />
-      Afficher un message</label
-    >
-    <label>
-      <input type="checkbox" id="toggleMusic" onchange="envoyer()" />
-      Afficher la musique
-    </label>
-    <label>
-      <input type="checkbox" id="showForecast" onchange="envoyer()" />
-      Afficher les prévisions météo
-    </label>
-
-    <label
-      >Message : <input type="text" id="message" oninput="envoyer()"
-    /></label>
-
-    <label
-      >Couleur principale :
-      <input
-        type="color"
-        id="themeColor"
-        class="color-picker"
-        onchange="envoyer()"
-        value="#3367d6"
-    /></label>
-
-    <script src="/socket.io/socket.io.js"></script>
-    <script>
-      const socket = io();
-
-      // Get current settings from the server
-      fetch("api/get-current-config")
-        .then((response) => response.json())
-        .then((data) => {
-          document.getElementById("toggleTime").checked = data.showTime;
-          document.getElementById("toggleSeconds").checked = data.showSeconds;
-          document.getElementById("toggleWeather").checked = data.showWeather;
-          document.getElementById("toggleMessage").checked = data.showMessage;
-          document.getElementById("toggleMusic").checked = data.showMusic;
-          document.getElementById("showForecast").checked = data.showForecast;
-          document.getElementById("message").value = data.message || "";
-          document.getElementById("themeColor").value =
-            data.themeColor || "#3367d6";
-        });
-
-      function envoyer() {
-        const data = {
-          showTime: document.getElementById("toggleTime").checked,
-          showSeconds: document.getElementById("toggleSeconds").checked,
-          showWeather: document.getElementById("toggleWeather").checked,
-          showMessage: document.getElementById("toggleMessage").checked,
-          showMusic: document.getElementById("toggleMusic").checked,
-          showForecast: document.getElementById("showForecast").checked,
-          message: document.getElementById("message").value,
-          themeColor: document.getElementById("themeColor").value,
-        };
-
-        // Send the updated settings to the server
-        console.log("Sending data:", data);
-        socket.emit("updateContent", data);
-        //make a POST request to the server
-        fetch("api/save-config", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(data),
-        })
-          .then((response) => response.json())
-          .then((result) => {
-            console.log("Configuration saved:", result);
-          })
-          .catch((error) => {
-            console.error("Error saving configuration:", error);
-          });
-      }
-    </script>
+    <h1>Contrôle désactivé</h1>
+    <p>
+      La personnalisation de l'affichage a été supprimée. L'écran affichera
+      toutes les cartes par défaut. La carte "message" a été retirée. La carte
+      musique apparaît uniquement lorsqu'une musique est en cours de lecture.
+    </p>
+    <p>Voir l'écran: <a href="/screen">Ouvrir l'écran</a></p>
   </body>
 </html>

@@ -1,10 +1,1 @@
-{
-  "showTime": true,
-  "showSeconds": false,
-  "showWeather": true,
-  "showMessage": false,
-  "showMusic": true,
-  "showForecast": true,
-  "message": "",
-  "themeColor": "#3367d6"
-}
+{}

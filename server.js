@@ -7,7 +7,6 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 const dotenv = require('dotenv');
-const fs = require('fs')
 
 dotenv.config();
 
@@ -35,16 +34,6 @@ async function convertVilleToCoords(ville) {
     }
     return [0, 0]; // Valeurs par défaut si la ville n'est pas trouvée
 }
-
-let currentConfig = {
-    showTime: true,
-    showWeather: true,
-    showMessage: false,
-    showMusic: true,
-    showSeconds: false,
-    message: '',
-    color: '#00aaff'
-};
 
 let currentMusic = {
     title: '',
@@ -109,33 +98,6 @@ app.get('/', (req, res) => {
     res.sendFile(__dirname + '/public/index.html');
 });
 
-app.get('/api/get-current-config', (req, res) => {
-    fs.readFile('current-config.json', 'utf8', (err, data) => {
-        if (err) {
-            console.error('Erreur lecture fichier config:', err);
-            return res.status(500).json({ error: 'Erreur lecture config' });
-        }
-        res.json(JSON.parse(data));
-    });
-});
-
-app.post('/api/save-config', (req, res) => {
-    const config = req.body;
-    if (!config) {
-        return res.status(400).json({ error: 'Configuration manquante' });
-    }
-
-    fs.writeFile('current-config.json', JSON.stringify(config, null, 2), (err) => {
-        if (err) {
-            console.error('Erreur écriture fichier config:', err);
-            return res.status(500).json({ error: 'Erreur écriture config' });
-        }
-        currentConfig = config; // Met à jour la configuration actuelle
-        io.emit('displayContent', currentConfig); // Émet l'événement pour mettre à jour les clients
-        res.json({ success: true });
-    });
-})
-
 app.get('/screen', (req, res) => {
     res.sendFile(__dirname + '/public/screen.html');
 });
@@ -199,7 +161,8 @@ app.post('/api/music', async (req, res) => {
             artist,
             position: Number(position),
             duration: Number(duration),
-            cover: '' // par défaut
+            cover: '', // par défaut
+            startTime: Date.now() // Enregistrer le timestamp de début
         };
 
         try {
@@ -227,13 +190,22 @@ app.post('/api/music', async (req, res) => {
 });
 
 io.on('connection', (socket) => {
-    socket.emit('displayContent', currentConfig);
+    console.log('Client connecté');
 
-    socket.on('updateContent', (data) => {
-        currentConfig = { ...currentConfig, ...data };
-        console.log('Configuration mise à jour:', currentConfig);
-        io.emit('displayContent', currentConfig);
-    });
+    // Envoyer les données de musique en cours si elles existent
+    if (currentMusic.title && currentMusic.artist) {
+        // Recalculer la position actuelle basée sur le temps écoulé
+        const timeElapsed = Date.now() - (currentMusic.startTime || Date.now());
+        const adjustedPosition = currentMusic.position + (timeElapsed / 1000);
+
+        // Ne pas envoyer si la chanson est terminée
+        if (adjustedPosition < currentMusic.duration) {
+            socket.emit('musicData', {
+                ...currentMusic,
+                position: adjustedPosition
+            });
+        }
+    }
 });
 
 async function getAlbumCover(title, artist) {
