@@ -883,7 +883,10 @@
         setLyricsState("loading");
 
         try {
-          const params = new URLSearchParams({ track: trackName, artist: artistName });
+          const params = new URLSearchParams({
+            track: trackName,
+            artist: artistName,
+          });
           const response = await fetch(`/api/lyrics?${params.toString()}`);
 
           if (!response.ok) {
