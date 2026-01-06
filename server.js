@@ -7,6 +7,7 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 const dotenv = require('dotenv');
+const lyricsCache = require('./services/lyricsCache');
 
 dotenv.config();
 
@@ -224,4 +225,52 @@ async function getAlbumCover(title, artist) {
 
 server.listen(PORT, () => {
     console.log(`Serveur sur http://localhost:${PORT}`);
+});
+
+// Start cache maintenance
+try { lyricsCache.startCleanup(); } catch (e) { console.error('Lyrics cache start failed', e); }
+
+// Lyrics API proxy + cache
+app.get('/api/lyrics', async (req, res) => {
+    const track = req.query.track || req.query.track_name || req.query.trackName || req.query.trackName;
+    const artist = req.query.artist || req.query.artist_name || req.query.artistName || req.query.artistName;
+    if (!track || !artist) return res.status(400).json({ error: 'Missing track or artist' });
+
+    try {
+        const syncedLyrics = await lyricsCache.getLyrics(track, artist);
+        if (!syncedLyrics) return res.status(404).json({ error: 'Paroles introuvables' });
+        res.json({ syncedLyrics });
+    } catch (err) {
+        console.error('Erreur /api/lyrics:', err);
+        res.status(500).json({ error: 'Erreur interne' });
+    }
+});
+
+// Admin endpoint: list cached lyrics entries (decompressed & formatted)
+app.get('/api/lyrics-cache', async (req, res) => {
+    try {
+        const list = await lyricsCache.listCached();
+        res.json({ list });
+    } catch (err) {
+        console.error('Erreur /api/lyrics-cache:', err);
+        res.status(500).json({ error: 'Erreur interne' });
+    }
+});
+
+// Return a single cache entry (decompressed) by file name
+app.get('/api/lyrics-cache/:file', async (req, res) => {
+    try {
+        const file = req.params.file;
+        const entry = await lyricsCache.readEntryByFile(file);
+        if (!entry) return res.status(404).json({ error: 'Fichier introuvable' });
+        res.json({ entry });
+    } catch (err) {
+        console.error('Erreur /api/lyrics-cache/:file', err);
+        res.status(500).json({ error: 'Erreur interne' });
+    }
+});
+
+// Serve simple UI to browse cache
+app.get('/cache', (req, res) => {
+    res.sendFile(__dirname + '/public/cache.html');
 });

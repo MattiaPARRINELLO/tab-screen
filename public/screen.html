@@ -877,41 +877,27 @@
       let lyricsInterval = null;
 
       /**
-       * Fetch lyrics from LRCLIB API
+       * Fetch lyrics via server-side cache proxy (/api/lyrics)
        */
       async function fetchLyrics(trackName, artistName) {
         setLyricsState("loading");
 
         try {
-          const params = new URLSearchParams({
-            track_name: trackName,
-            artist_name: artistName,
-          });
-
-          const response = await fetch(
-            `https://lrclib.net/api/search?${params.toString()}`
-          );
+          const params = new URLSearchParams({ track: trackName, artist: artistName });
+          const response = await fetch(`/api/lyrics?${params.toString()}`);
 
           if (!response.ok) {
-            throw new Error("LRCLIB API error");
+            setLyricsState("none");
+            return null;
           }
 
           const data = await response.json();
-
-          if (!data || data.length === 0) {
+          if (!data || !data.syncedLyrics) {
             setLyricsState("none");
             return null;
           }
 
-          // Find best match with synced lyrics
-          const match = data.find((item) => item.syncedLyrics);
-
-          if (!match || !match.syncedLyrics) {
-            setLyricsState("none");
-            return null;
-          }
-
-          return match.syncedLyrics;
+          return data.syncedLyrics;
         } catch (error) {
           console.error("Lyrics fetch error:", error);
           setLyricsState("none");
