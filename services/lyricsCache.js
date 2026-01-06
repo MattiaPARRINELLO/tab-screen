@@ -129,7 +129,7 @@ function generateVariants(originalTrack, originalArtist) {
     // unique by track|artist
     const seen = new Set();
     return variants.filter(v => {
-        const key = `${(v.track||'').toLowerCase()}|||${(v.artist||'').toLowerCase()}`;
+        const key = `${(v.track || '').toLowerCase()}|||${(v.artist || '').toLowerCase()}`;
         if (seen.has(key)) return false;
         seen.add(key);
         return true;

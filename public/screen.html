@@ -696,7 +696,9 @@
 
       /* ========== PERFORMANCE / REDUCED MOTION ========== */
       @media (prefers-reduced-motion: reduce) {
-        *, *::before, *::after {
+        *,
+        *::before,
+        *::after {
           animation: none !important;
           transition: none !important;
         }
@@ -1237,7 +1239,10 @@
       // ========== START ==========
 
       // If the user prefers reduced motion, apply class to pause animations
-      if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      if (
+        window.matchMedia &&
+        window.matchMedia("(prefers-reduced-motion: reduce)").matches
+      ) {
         document.body.classList.add("reduced-motion");
       }
 
@@ -1256,14 +1261,17 @@
         } else {
           document.body.classList.remove("paused-animations");
           // restart progress and lyrics sync if needed
-          if (!progressInterval && !musicCard.classList.contains("hidden")) startProgressInterval();
+          if (!progressInterval && !musicCard.classList.contains("hidden"))
+            startProgressInterval();
           if (!lyricsInterval && currentLyrics.length > 0) startLyricsSync();
         }
       });
 
       // On tablet-sized screens, disable page panning if plenty of empty space
       function applyNoPanForTablet() {
-        const isTabletLike = window.matchMedia("(max-width: 900px), (max-height: 900px)").matches;
+        const isTabletLike = window.matchMedia(
+          "(max-width: 900px), (max-height: 900px)"
+        ).matches;
         if (isTabletLike) {
           document.body.classList.add("no-pan");
           // also set style for older browsers
