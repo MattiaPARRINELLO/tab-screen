@@ -2,3 +2,6 @@ cache/
 .env
 node_modules
 
+# Local server log
+server.log
+

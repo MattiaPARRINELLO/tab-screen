@@ -92,6 +92,50 @@ async function fetchFromRemote(artist, track) {
     }
 }
 
+function stripFeatTags(s) {
+    if (!s || typeof s !== 'string') return s;
+    let out = s;
+    // remove parenthetical/bracketed feat parts e.g. (feat. X) or [feat X]
+    out = out.replace(/\s*[\(\[][^\)\]]*(?:feat\.?|ft\.?|featuring)[^\)\]]*[\)\]]/i, '');
+    // remove trailing " - feat X" or similar
+    out = out.replace(/\s*[-–—:]\s*(?:feat\.?|ft\.?|featuring)\b.*$/i, '');
+    // remove inline " feat. X" at end
+    out = out.replace(/\s+(?:feat\.?|ft\.?|featuring)\b.*$/i, '');
+    return out.trim();
+}
+
+function generateVariants(originalTrack, originalArtist) {
+    const variants = [];
+    const t = (originalTrack || '').trim();
+    const a = (originalArtist || '').trim();
+    // start with original
+    variants.push({ track: t, artist: a });
+
+    // stripped track (remove feat tags)
+    const strippedTrack = stripFeatTags(t);
+    if (strippedTrack && strippedTrack.toLowerCase() !== t.toLowerCase()) {
+        variants.push({ track: strippedTrack, artist: a });
+    }
+
+    // stripped artist
+    const strippedArtist = stripFeatTags(a);
+    if (strippedArtist && strippedArtist.toLowerCase() !== a.toLowerCase()) {
+        variants.push({ track: t, artist: strippedArtist });
+        if (strippedTrack && strippedTrack.toLowerCase() !== t.toLowerCase()) {
+            variants.push({ track: strippedTrack, artist: strippedArtist });
+        }
+    }
+
+    // unique by track|artist
+    const seen = new Set();
+    return variants.filter(v => {
+        const key = `${(v.track||'').toLowerCase()}|||${(v.artist||'').toLowerCase()}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+    });
+}
+
 async function getLyrics(track, artist) {
     ensureCacheDir();
     const hash = keyHash(artist, track);
@@ -106,9 +150,20 @@ async function getLyrics(track, artist) {
     }
 
     // Not in cache or expired: fetch from remote
-    const syncedRaw = await fetchFromRemote(artist, track);
-    if (syncedRaw) {
-        const synced = minifyLRC(syncedRaw);
+    // Try fetching with a few sensible variants (remove feat info etc.)
+    const variants = generateVariants(track, artist);
+    let found = null;
+    for (const v of variants) {
+        const syncedRaw = await fetchFromRemote(v.artist, v.track);
+        if (syncedRaw) {
+            found = { syncedRaw, used: v };
+            break;
+        }
+    }
+
+    if (found) {
+        const synced = minifyLRC(found.syncedRaw);
+        // store metadata with original track/artist but note used variant in stored track if desired
         const obj = { track, artist, syncedLyrics: synced, timestamp: now };
         await writeCache(hash, obj);
         return synced;
@@ -190,3 +245,25 @@ async function readEntryByFile(fileName) {
 }
 
 module.exports = { getLyrics, startCleanup, listCached, readEntryByFile };
+
+async function tryVariants(track, artist) {
+    ensureCacheDir();
+    const hash = keyHash(artist, track);
+    const variants = generateVariants(track, artist);
+    for (const v of variants) {
+        try {
+            const syncedRaw = await fetchFromRemote(v.artist, v.track);
+            if (syncedRaw) {
+                const synced = minifyLRC(syncedRaw);
+                const obj = { track, artist, syncedLyrics: synced, timestamp: Date.now() };
+                await writeCache(hash, obj);
+                return { syncedLyrics: synced, used: v };
+            }
+        } catch (e) {
+            // continue to next variant
+        }
+    }
+    return null;
+}
+
+module.exports = { getLyrics, startCleanup, listCached, readEntryByFile, tryVariants };

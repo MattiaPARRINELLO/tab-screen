@@ -237,9 +237,19 @@ app.get('/api/lyrics', async (req, res) => {
     if (!track || !artist) return res.status(400).json({ error: 'Missing track or artist' });
 
     try {
-        const syncedLyrics = await lyricsCache.getLyrics(track, artist);
-        if (!syncedLyrics) return res.status(404).json({ error: 'Paroles introuvables' });
-        res.json({ syncedLyrics });
+        let syncedLyrics = await lyricsCache.getLyrics(track, artist);
+        if (syncedLyrics) {
+            return res.json({ syncedLyrics });
+        }
+
+        // Try variants server-side (strip feat, etc.)
+        const fallback = await lyricsCache.tryVariants(track, artist);
+        if (fallback && fallback.syncedLyrics) {
+            console.log('lyrics: used variant', fallback.used);
+            return res.json({ syncedLyrics: fallback.syncedLyrics, usedVariant: fallback.used });
+        }
+
+        return res.status(404).json({ error: 'Paroles introuvables' });
     } catch (err) {
         console.error('Erreur /api/lyrics:', err);
         res.status(500).json({ error: 'Erreur interne' });
