@@ -883,9 +883,9 @@
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        gap: var(--gap-lg);
+        gap: var(--gap-md);
         width: 100%;
-        max-width: 500px;
+        max-width: 420px;
       }
 
       #musicCard.fullscreen-mode .music-cover-wrapper {
@@ -894,8 +894,8 @@
       }
 
       #musicCard.fullscreen-mode .music-cover {
-        width: clamp(180px, 25vw, 280px);
-        height: clamp(180px, 25vw, 280px);
+        width: clamp(140px, 18vw, 200px);
+        height: clamp(140px, 18vw, 200px);
         border-radius: var(--radius-lg);
       }
 
@@ -906,15 +906,27 @@
       }
 
       #musicCard.fullscreen-mode .music-track {
-        font-size: clamp(1.5rem, 2.5vw, 2.25rem);
+        font-size: clamp(1.25rem, 1.8vw, 1.75rem);
         white-space: normal;
         text-align: center;
+        line-height: 1.3;
+        max-height: 3.9rem;
+        overflow: hidden;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
       }
 
       #musicCard.fullscreen-mode .music-artist {
-        font-size: clamp(1rem, 1.5vw, 1.25rem);
+        font-size: clamp(0.9rem, 1.2vw, 1.1rem);
         white-space: normal;
         text-align: center;
+        line-height: 1.35;
+        max-height: 2.7rem;
+        overflow: hidden;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
       }
 
       #musicCard.fullscreen-mode .music-progress-row {
