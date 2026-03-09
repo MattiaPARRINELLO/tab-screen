@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="fr">
   <head>
     <meta charset="UTF-8" />
@@ -68,7 +68,11 @@
       body {
         background: var(--bg-primary);
         color: var(--text-primary);
-        font-family: "Inter", -apple-system, system-ui, sans-serif;
+        font-family:
+          "Inter",
+          -apple-system,
+          system-ui,
+          sans-serif;
         overflow: hidden;
         position: relative;
         width: 100vw;
@@ -83,7 +87,8 @@
         left: -50%;
         width: 200%;
         height: 200%;
-        background: radial-gradient(
+        background:
+          radial-gradient(
             circle at 20% 30%,
             rgba(78, 205, 196, 0.08) 0%,
             transparent 50%
@@ -180,7 +185,8 @@
       }
 
       .card:not(.hidden):not(#musicCard) {
-        animation: cardEnter var(--duration-slow) var(--ease-smooth) forwards,
+        animation:
+          cardEnter var(--duration-slow) var(--ease-smooth) forwards,
           breathe 8s ease-in-out 1s infinite;
       }
 
@@ -422,7 +428,9 @@
         height: clamp(80px, 8vw, 100px);
         border-radius: var(--radius-md);
         object-fit: cover;
-        box-shadow: var(--shadow-lg), 0 0 40px rgba(255, 107, 157, 0.3);
+        box-shadow:
+          var(--shadow-lg),
+          0 0 40px rgba(255, 107, 157, 0.3);
         animation: coverPulse 6s ease-in-out infinite;
       }
 
@@ -434,7 +442,9 @@
         }
         50% {
           transform: scale(1.02);
-          box-shadow: var(--shadow-lg), 0 0 30px rgba(255, 107, 157, 0.4);
+          box-shadow:
+            var(--shadow-lg),
+            0 0 30px rgba(255, 107, 157, 0.4);
         }
       }
 
@@ -507,8 +517,10 @@
         gap: var(--gap-md);
         align-items: center;
         flex-shrink: 0;
-        transition: transform 450ms var(--ease-smooth),
-          gap 380ms var(--ease-smooth), max-width 380ms var(--ease-smooth);
+        transition:
+          transform 450ms var(--ease-smooth),
+          gap 380ms var(--ease-smooth),
+          max-width 380ms var(--ease-smooth);
       }
 
       .music-cover,
@@ -575,8 +587,10 @@
         max-height: 1000px;
         opacity: 1;
         transform: translateY(0) scale(1);
-        transition: max-height 420ms var(--ease-smooth),
-          opacity 300ms var(--ease-smooth), transform 420ms var(--ease-smooth);
+        transition:
+          max-height 420ms var(--ease-smooth),
+          opacity 300ms var(--ease-smooth),
+          transform 420ms var(--ease-smooth);
         mask-image: linear-gradient(
           to bottom,
           transparent 0%,
@@ -639,7 +653,8 @@
         visibility: hidden;
         pointer-events: none;
         transform: translate(-50%, calc(-50% + 12px));
-        transition: opacity 420ms cubic-bezier(0.22, 1, 0.36, 1),
+        transition:
+          opacity 420ms cubic-bezier(0.22, 1, 0.36, 1),
           transform 420ms cubic-bezier(0.22, 1, 0.36, 1),
           visibility 420ms cubic-bezier(0.22, 1, 0.36, 1);
         isolation: isolate;
@@ -665,7 +680,8 @@
         filter: blur(12px);
         z-index: -1;
         opacity: 0.6;
-        animation: prestartHaloOrbit 5s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
+        animation: prestartHaloOrbit 5s cubic-bezier(0.45, 0.05, 0.55, 0.95)
+          infinite;
       }
 
       .lyrics-prestart-dot {
@@ -678,13 +694,15 @@
           rgba(248, 250, 252, 1),
           rgba(78, 205, 196, 0.85)
         );
-        box-shadow: 0 0 15px rgba(78, 205, 196, 0.5),
+        box-shadow:
+          0 0 15px rgba(78, 205, 196, 0.5),
           0 0 28px rgba(167, 139, 250, 0.3),
           inset 0 1px 3px rgba(255, 255, 255, 0.4);
         top: 50%;
         left: 50%;
         margin: -5px 0 0 -5px;
-        animation: prestartOrganicOrbit 3.6s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
+        animation: prestartOrganicOrbit 3.6s
+          cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
       }
 
       .lyrics-prestart-dot:nth-child(1) {
@@ -765,8 +783,10 @@
         opacity: 0.2;
         filter: blur(1px);
         transform: scale(0.99);
-        transition: opacity 260ms var(--ease-smooth),
-          filter 260ms var(--ease-smooth), transform 260ms var(--ease-smooth);
+        transition:
+          opacity 260ms var(--ease-smooth),
+          filter 260ms var(--ease-smooth),
+          transform 260ms var(--ease-smooth);
       }
 
       .lyrics-loading-spinner {
@@ -1262,7 +1282,8 @@
        * Activer/désactiver le mode plein écran (sans paroles)
        */
       function setFullscreenMode(enabled) {
-        const isCurrentlyEnabled = musicCard.classList.contains("fullscreen-mode");
+        const isCurrentlyEnabled =
+          musicCard.classList.contains("fullscreen-mode");
         if (isCurrentlyEnabled === enabled) return;
 
         const prefersReducedMotion =
@@ -1292,7 +1313,7 @@
         ].filter(Boolean);
 
         const firstRects = new Map(
-          elements.map((el) => [el, el.getBoundingClientRect()])
+          elements.map((el) => [el, el.getBoundingClientRect()]),
         );
 
         musicCard.classList.toggle("fullscreen-mode", enabled);
@@ -1330,7 +1351,7 @@
               duration: 520,
               easing: "cubic-bezier(0.22, 1, 0.36, 1)",
               fill: "both",
-            }
+            },
           );
         });
       }
@@ -1509,7 +1530,8 @@
       }
 
       function setCoverWithFallback(coverUrl) {
-        const nextSrc = coverUrl && String(coverUrl).trim() ? coverUrl : PLACEHOLDER_COVER;
+        const nextSrc =
+          coverUrl && String(coverUrl).trim() ? coverUrl : PLACEHOLDER_COVER;
         coverEl.dataset.fallbackApplied = "0";
         coverEl.src = nextSrc;
       }
@@ -1547,7 +1569,11 @@
         const outAnims = animTargets.map((el) =>
           el.animate(
             [
-              { opacity: 1, transform: "translateY(0) scale(1)", filter: "blur(0)" },
+              {
+                opacity: 1,
+                transform: "translateY(0) scale(1)",
+                filter: "blur(0)",
+              },
               {
                 opacity: 0.18,
                 transform: "translateY(10px) scale(0.985)",
@@ -1558,8 +1584,8 @@
               duration: 180,
               easing: "cubic-bezier(0.4, 0, 0.2, 1)",
               fill: "forwards",
-            }
-          )
+            },
+          ),
         );
 
         await Promise.all(outAnims.map((a) => a.finished.catch(() => null)));
@@ -1574,14 +1600,18 @@
                 transform: "translateY(-10px) scale(0.985)",
                 filter: "blur(2px)",
               },
-              { opacity: 1, transform: "translateY(0) scale(1)", filter: "blur(0)" },
+              {
+                opacity: 1,
+                transform: "translateY(0) scale(1)",
+                filter: "blur(0)",
+              },
             ],
             {
               duration: 340,
               easing: "cubic-bezier(0.22, 1, 0.36, 1)",
               fill: "both",
-            }
-          )
+            },
+          ),
         );
 
         await Promise.all(inAnims.map((a) => a.finished.catch(() => null)));
@@ -1744,7 +1774,7 @@
       // On tablet-sized screens, disable page panning if plenty of empty space
       function applyNoPanForTablet() {
         const isTabletLike = window.matchMedia(
-          "(max-width: 900px), (max-height: 900px)"
+          "(max-width: 900px), (max-height: 900px)",
         ).matches;
         if (isTabletLike) {
           document.body.classList.add("no-pan");

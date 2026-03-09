@@ -1,5 +1,5 @@
 <!-- public/index.html - Interface de contrôle + simulateur musique -->
-<!DOCTYPE html>
+<!doctype html>
 <html lang="fr">
   <head>
     <meta charset="UTF-8" />
@@ -146,23 +146,51 @@
       <form id="musicForm">
         <label for="title">
           Titre (utilisé pour retrouver les paroles)
-          <input id="title" name="title" type="text" required placeholder="Ex: Numb" />
+          <input
+            id="title"
+            name="title"
+            type="text"
+            required
+            placeholder="Ex: Numb"
+          />
         </label>
 
         <label for="artist">
           Artiste
-          <input id="artist" name="artist" type="text" required placeholder="Ex: Linkin Park" />
+          <input
+            id="artist"
+            name="artist"
+            type="text"
+            required
+            placeholder="Ex: Linkin Park"
+          />
         </label>
 
         <div class="grid">
           <label for="duration">
             Durée (secondes)
-            <input id="duration" name="duration" type="number" min="1" step="1" value="180" required />
+            <input
+              id="duration"
+              name="duration"
+              type="number"
+              min="1"
+              step="1"
+              value="180"
+              required
+            />
           </label>
 
           <label for="position">
             Position de départ (secondes)
-            <input id="position" name="position" type="number" min="0" step="1" value="0" required />
+            <input
+              id="position"
+              name="position"
+              type="number"
+              min="0"
+              step="1"
+              value="0"
+              required
+            />
           </label>
         </div>
 
@@ -173,9 +201,9 @@
       </form>
 
       <div class="hint">
-        Les paroles ne sont pas envoyées directement ici : elles seront récupérées
-        automatiquement sur l'écran via le couple titre + artiste, comme en
-        production.
+        Les paroles ne sont pas envoyées directement ici : elles seront
+        récupérées automatiquement sur l'écran via le couple titre + artiste,
+        comme en production.
       </div>
       <div id="status" aria-live="polite"></div>
     </section>
