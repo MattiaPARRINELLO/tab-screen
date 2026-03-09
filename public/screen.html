@@ -507,6 +507,16 @@
         gap: var(--gap-md);
         align-items: center;
         flex-shrink: 0;
+        transition: transform 450ms var(--ease-smooth),
+          gap 380ms var(--ease-smooth), max-width 380ms var(--ease-smooth);
+      }
+
+      .music-cover,
+      .music-info,
+      .music-track,
+      .music-artist,
+      .music-progress-row {
+        transition: all 420ms var(--ease-smooth);
       }
 
       /* ========== RESPONSIVE ADJUSTMENTS ========== */
@@ -562,6 +572,11 @@
         width: 100%;
         min-height: 0;
         overflow: hidden;
+        max-height: 1000px;
+        opacity: 1;
+        transform: translateY(0) scale(1);
+        transition: max-height 420ms var(--ease-smooth),
+          opacity 300ms var(--ease-smooth), transform 420ms var(--ease-smooth);
         mask-image: linear-gradient(
           to bottom,
           transparent 0%,
@@ -611,6 +626,147 @@
       .lyrics-loading.active,
       .lyrics-none.active {
         display: flex;
+      }
+
+      .lyrics-prestart {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        z-index: 4;
+        width: 70px;
+        height: 70px;
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+        transform: translate(-50%, calc(-50% + 12px));
+        transition: opacity 420ms cubic-bezier(0.22, 1, 0.36, 1),
+          transform 420ms cubic-bezier(0.22, 1, 0.36, 1),
+          visibility 420ms cubic-bezier(0.22, 1, 0.36, 1);
+        isolation: isolate;
+      }
+
+      .lyrics-prestart.active {
+        opacity: 1;
+        visibility: visible;
+        transform: translate(-50%, -50%);
+      }
+
+      .lyrics-prestart::before {
+        content: "";
+        position: absolute;
+        inset: -22px;
+        border-radius: 50%;
+        background: radial-gradient(
+          circle,
+          rgba(78, 205, 196, 0.18) 0%,
+          rgba(167, 139, 250, 0.12) 40%,
+          rgba(78, 205, 196, 0) 72%
+        );
+        filter: blur(12px);
+        z-index: -1;
+        opacity: 0.6;
+        animation: prestartHaloOrbit 5s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
+      }
+
+      .lyrics-prestart-dot {
+        position: absolute;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: radial-gradient(
+          circle at 30% 30%,
+          rgba(248, 250, 252, 1),
+          rgba(78, 205, 196, 0.85)
+        );
+        box-shadow: 0 0 15px rgba(78, 205, 196, 0.5),
+          0 0 28px rgba(167, 139, 250, 0.3),
+          inset 0 1px 3px rgba(255, 255, 255, 0.4);
+        top: 50%;
+        left: 50%;
+        margin: -5px 0 0 -5px;
+        animation: prestartOrganicOrbit 3.6s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
+      }
+
+      .lyrics-prestart-dot:nth-child(1) {
+        animation-delay: 0s;
+        filter: hue-rotate(0deg);
+      }
+
+      .lyrics-prestart-dot:nth-child(2) {
+        animation-delay: -1.2s;
+        filter: hue-rotate(25deg);
+      }
+
+      .lyrics-prestart-dot:nth-child(3) {
+        animation-delay: -2.4s;
+        filter: hue-rotate(50deg);
+      }
+
+      @keyframes prestartOrganicOrbit {
+        0% {
+          transform: rotate(0deg) translateX(22px) rotate(0deg) scale(0.85);
+          opacity: 0.4;
+        }
+        15% {
+          transform: rotate(54deg) translateX(26px) rotate(-54deg) scale(1.05);
+          opacity: 0.95;
+        }
+        25% {
+          transform: rotate(90deg) translateX(24px) rotate(-90deg) scale(1);
+          opacity: 1;
+        }
+        40% {
+          transform: rotate(144deg) translateX(20px) rotate(-144deg) scale(0.9);
+          opacity: 0.7;
+        }
+        50% {
+          transform: rotate(180deg) translateX(22px) rotate(-180deg) scale(0.85);
+          opacity: 0.4;
+        }
+        65% {
+          transform: rotate(234deg) translateX(26px) rotate(-234deg) scale(1.05);
+          opacity: 0.95;
+        }
+        75% {
+          transform: rotate(270deg) translateX(24px) rotate(-270deg) scale(1);
+          opacity: 1;
+        }
+        90% {
+          transform: rotate(324deg) translateX(20px) rotate(-324deg) scale(0.9);
+          opacity: 0.7;
+        }
+        100% {
+          transform: rotate(360deg) translateX(22px) rotate(-360deg) scale(0.85);
+          opacity: 0.4;
+        }
+      }
+
+      @keyframes prestartHaloOrbit {
+        0%,
+        100% {
+          transform: scale(0.96) rotate(0deg);
+          opacity: 0.45;
+        }
+        25% {
+          transform: scale(1.04) rotate(90deg);
+          opacity: 0.65;
+        }
+        50% {
+          transform: scale(0.98) rotate(180deg);
+          opacity: 0.5;
+        }
+        75% {
+          transform: scale(1.02) rotate(270deg);
+          opacity: 0.6;
+        }
+      }
+
+      .lyrics-container.prestart-waiting .lyrics-content {
+        opacity: 0.2;
+        filter: blur(1px);
+        transform: scale(0.99);
+        transition: opacity 260ms var(--ease-smooth),
+          filter 260ms var(--ease-smooth), transform 260ms var(--ease-smooth);
       }
 
       .lyrics-loading-spinner {
@@ -689,6 +845,67 @@
         }
       }
 
+      /* ========== MUSIC FULLSCREEN MODE (no lyrics) ========== */
+      #musicCard.fullscreen-mode {
+        justify-content: center;
+        align-items: center;
+      }
+
+      #musicCard.fullscreen-mode .lyrics-container {
+        opacity: 0;
+        transform: translateY(-18px) scale(0.98);
+        max-height: 0;
+        flex: 0 0 0;
+        pointer-events: none;
+      }
+
+      #musicCard.fullscreen-mode .music-bottom {
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: var(--gap-lg);
+        width: 100%;
+        max-width: 500px;
+      }
+
+      #musicCard.fullscreen-mode .music-cover-wrapper {
+        display: flex;
+        justify-content: center;
+      }
+
+      #musicCard.fullscreen-mode .music-cover {
+        width: clamp(180px, 25vw, 280px);
+        height: clamp(180px, 25vw, 280px);
+        border-radius: var(--radius-lg);
+      }
+
+      #musicCard.fullscreen-mode .music-info {
+        align-items: center;
+        text-align: center;
+        width: 100%;
+      }
+
+      #musicCard.fullscreen-mode .music-track {
+        font-size: clamp(1.5rem, 2.5vw, 2.25rem);
+        white-space: normal;
+        text-align: center;
+      }
+
+      #musicCard.fullscreen-mode .music-artist {
+        font-size: clamp(1rem, 1.5vw, 1.25rem);
+        white-space: normal;
+        text-align: center;
+      }
+
+      #musicCard.fullscreen-mode .music-progress-row {
+        justify-content: center;
+        margin-top: var(--gap-sm);
+      }
+
+      #musicCard.fullscreen-mode .music-progress {
+        max-width: 400px;
+      }
+
       /* ========== UTILITY ========== */
       .hidden {
         display: none !important;
@@ -750,6 +967,11 @@
             </div>
             <div class="lyrics-content" id="lyricsContent"></div>
           </div>
+          <div class="lyrics-prestart" id="lyricsPrestart">
+            <span class="lyrics-prestart-dot" aria-hidden="true"></span>
+            <span class="lyrics-prestart-dot" aria-hidden="true"></span>
+            <span class="lyrics-prestart-dot" aria-hidden="true"></span>
+          </div>
         </div>
 
         <!-- MUSIC INFO BOTTOM -->
@@ -802,6 +1024,25 @@
       const coverEl = document.getElementById("cover");
       const progressBar = document.getElementById("progressBar");
       const musicDurationEl = document.getElementById("musicDuration");
+      const musicBottomEl = musicCard.querySelector(".music-bottom");
+      const DEFAULT_MUSIC_CARD_BACKGROUND = "";
+      const PLACEHOLDER_COVER =
+        "data:image/svg+xml;utf8," +
+        encodeURIComponent(`
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
+            <defs>
+              <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#4ecdc4" />
+                <stop offset="100%" stop-color="#a78bfa" />
+              </linearGradient>
+            </defs>
+            <rect width="400" height="400" rx="42" fill="#111827"/>
+            <rect x="22" y="22" width="356" height="356" rx="34" fill="url(#g)" opacity="0.22"/>
+            <circle cx="210" cy="132" r="22" fill="#f8fafc" opacity="0.92"/>
+            <path d="M230 132v120c0 31-18 52-49 52-24 0-41-15-41-37 0-24 18-41 44-41 10 0 19 2 26 6V95l116-25v43l-96 21z"
+              fill="#f8fafc" opacity="0.96"/>
+          </svg>
+        `);
 
       // ========== INITIALIZATION ==========
       function init() {
@@ -910,6 +1151,7 @@
       const lyricsWrapper = document.getElementById("lyricsWrapper");
       const lyricsLoading = document.getElementById("lyricsLoading");
       const lyricsNone = document.getElementById("lyricsNone");
+      const lyricsPrestart = document.getElementById("lyricsPrestart");
       const lyricsContent = document.getElementById("lyricsContent");
 
       let currentLyrics = [];
@@ -989,13 +1231,108 @@
        * Set lyrics display state
        */
       function setLyricsState(state) {
+        // Déclencher la transition de layout d'abord pour un morphing fluide
+        // (surtout de normal -> fullscreen).
+        setFullscreenMode(state === "none");
+
         lyricsLoading.classList.toggle("active", state === "loading");
         lyricsNone.classList.toggle("active", state === "none");
+        lyricsPrestart.classList.remove("active");
         lyricsContent.style.display = state === "lyrics" ? "flex" : "none";
 
         if (state !== "lyrics") {
           lyricsWrapper.style.transform = "translateY(-50%)";
         }
+      }
+
+      function setPrestartLyricsAnimation(waiting) {
+        if (!lyricsPrestart) return;
+
+        if (!waiting) {
+          lyricsPrestart.classList.remove("active");
+          lyricsContainer.classList.remove("prestart-waiting");
+          return;
+        }
+
+        lyricsPrestart.classList.add("active");
+        lyricsContainer.classList.add("prestart-waiting");
+      }
+
+      /**
+       * Activer/désactiver le mode plein écran (sans paroles)
+       */
+      function setFullscreenMode(enabled) {
+        const isCurrentlyEnabled = musicCard.classList.contains("fullscreen-mode");
+        if (isCurrentlyEnabled === enabled) return;
+
+        const prefersReducedMotion =
+          window.matchMedia &&
+          window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+        if (prefersReducedMotion) {
+          musicCard.classList.toggle("fullscreen-mode", enabled);
+          return;
+        }
+
+        animateMusicMorphTransition(enabled);
+      }
+
+      /**
+       * Animation FLIP pour montrer le déplacement des éléments
+       * entre mode paroles et mode plein écran.
+       */
+      function animateMusicMorphTransition(enabled) {
+        const elements = [
+          musicCard,
+          lyricsContainer,
+          musicBottomEl,
+          coverEl,
+          trackEl,
+          artistEl,
+        ].filter(Boolean);
+
+        const firstRects = new Map(
+          elements.map((el) => [el, el.getBoundingClientRect()])
+        );
+
+        musicCard.classList.toggle("fullscreen-mode", enabled);
+
+        elements.forEach((el) => {
+          const first = firstRects.get(el);
+          const last = el.getBoundingClientRect();
+          if (!first || !last) return;
+
+          const dx = first.left - last.left;
+          const dy = first.top - last.top;
+          const sx = last.width > 0 ? first.width / last.width : 1;
+          const sy = last.height > 0 ? first.height / last.height : 1;
+
+          const hasMovement =
+            Math.abs(dx) > 0.5 ||
+            Math.abs(dy) > 0.5 ||
+            Math.abs(sx - 1) > 0.02 ||
+            Math.abs(sy - 1) > 0.02;
+
+          if (!hasMovement) return;
+
+          el.animate(
+            [
+              {
+                transformOrigin: "center center",
+                transform: `translate(${dx}px, ${dy}px) scale(${sx}, ${sy})`,
+              },
+              {
+                transformOrigin: "center center",
+                transform: "translate(0, 0) scale(1, 1)",
+              },
+            ],
+            {
+              duration: 520,
+              easing: "cubic-bezier(0.22, 1, 0.36, 1)",
+              fill: "both",
+            }
+          );
+        });
       }
 
       /**
@@ -1015,6 +1352,20 @@
         });
 
         setLyricsState("lyrics");
+
+        // Afficher immédiatement l'état intro si la première ligne
+        // n'a pas encore commencé.
+        const elapsed = (Date.now() - musicStartTime) / 1000;
+        const currentTime =
+          musicInitialPosition + elapsed + (config.lyricsDelaySeconds || 0);
+        const firstLyricTime = currentLyrics[0]?.time ?? 0;
+        setPrestartLyricsAnimation(currentTime < firstLyricTime);
+
+        // Positionner immédiatement le bloc de paroles pour éviter
+        // le "grand scroll" visible quand la première ligne démarre.
+        if (currentTime < firstLyricTime) {
+          scrollToLyricIndex(0);
+        }
       }
 
       /**
@@ -1022,6 +1373,27 @@
        */
       function updateActiveLyric(currentTime) {
         if (currentLyrics.length === 0) return;
+
+        const firstLyricTime = currentLyrics[0]?.time ?? 0;
+        const waitingFirstLyric = currentTime < firstLyricTime;
+        setPrestartLyricsAnimation(waitingFirstLyric);
+
+        if (waitingFirstLyric) {
+          // Garder la première ligne déjà bien placée visuellement
+          // avant son activation, pour éviter la remontée brutale.
+          scrollToLyricIndex(0);
+
+          const lines = lyricsContent.querySelectorAll(".lyrics-line");
+          lines.forEach((line, index) => {
+            line.classList.remove("active", "past", "near");
+            if (index === 0 || index === 1) {
+              line.classList.add("near");
+            }
+          });
+
+          activeLyricIndex = -1;
+          return;
+        }
 
         // Find the current lyric index
         let newIndex = -1;
@@ -1059,18 +1431,21 @@
        */
       function scrollToActiveLine() {
         if (activeLyricIndex < 0) return;
+        scrollToLyricIndex(activeLyricIndex);
+      }
 
-        const activeLine = lyricsContent.querySelector(".lyrics-line.active");
-        if (!activeLine) return;
+      /**
+       * Center a lyric line by index in the lyrics container.
+       */
+      function scrollToLyricIndex(index) {
+        if (index < 0) return;
+        const lines = lyricsContent.querySelectorAll(".lyrics-line");
+        const target = lines[index];
+        if (!target) return;
 
-        const containerHeight = lyricsContainer.offsetHeight;
-        const lineOffset = activeLine.offsetTop;
-        const lineHeight = activeLine.offsetHeight;
-
-        // Calculate offset to center the active line
-        // Center of the line should be at center of container
+        const lineOffset = target.offsetTop;
+        const lineHeight = target.offsetHeight;
         const scrollOffset = lineOffset + lineHeight / 2;
-
         lyricsWrapper.style.transform = `translateY(${-scrollOffset}px)`;
       }
 
@@ -1109,15 +1484,16 @@
       /**
        * Stop lyrics synchronization
        */
-      function stopLyricsSync() {
+      function stopLyricsSync(nextState = "none") {
         if (lyricsInterval) {
           clearInterval(lyricsInterval);
           lyricsInterval = null;
         }
+        setPrestartLyricsAnimation(false);
         currentLyrics = [];
         activeLyricIndex = -1;
         lyricsContent.innerHTML = "";
-        setLyricsState("none");
+        setLyricsState(nextState);
       }
 
       // ========== MUSIC ==========
@@ -1126,6 +1502,90 @@
       let musicStartTime;
       let musicInitialPosition = 0;
       let musicDuration = 0;
+      let currentSongKey = "";
+
+      function resetMusicCardBackground() {
+        musicCard.style.background = DEFAULT_MUSIC_CARD_BACKGROUND;
+      }
+
+      function setCoverWithFallback(coverUrl) {
+        const nextSrc = coverUrl && String(coverUrl).trim() ? coverUrl : PLACEHOLDER_COVER;
+        coverEl.dataset.fallbackApplied = "0";
+        coverEl.src = nextSrc;
+      }
+
+      coverEl.addEventListener("error", () => {
+        if (coverEl.dataset.fallbackApplied === "1") return;
+        coverEl.dataset.fallbackApplied = "1";
+        coverEl.src = PLACEHOLDER_COVER;
+        resetMusicCardBackground();
+      });
+
+      async function animateSongChangeIfNeeded(isSongChanged, applyUpdate) {
+        const prefersReducedMotion =
+          window.matchMedia &&
+          window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+        const canAnimate =
+          isSongChanged &&
+          !prefersReducedMotion &&
+          !musicCard.classList.contains("hidden");
+
+        if (!canAnimate) {
+          applyUpdate();
+          return;
+        }
+
+        const animTargets = [
+          coverEl,
+          trackEl,
+          artistEl,
+          musicBottomEl,
+          lyricsContainer,
+        ].filter(Boolean);
+
+        const outAnims = animTargets.map((el) =>
+          el.animate(
+            [
+              { opacity: 1, transform: "translateY(0) scale(1)", filter: "blur(0)" },
+              {
+                opacity: 0.18,
+                transform: "translateY(10px) scale(0.985)",
+                filter: "blur(2px)",
+              },
+            ],
+            {
+              duration: 180,
+              easing: "cubic-bezier(0.4, 0, 0.2, 1)",
+              fill: "forwards",
+            }
+          )
+        );
+
+        await Promise.all(outAnims.map((a) => a.finished.catch(() => null)));
+
+        applyUpdate();
+
+        const inAnims = animTargets.map((el) =>
+          el.animate(
+            [
+              {
+                opacity: 0.18,
+                transform: "translateY(-10px) scale(0.985)",
+                filter: "blur(2px)",
+              },
+              { opacity: 1, transform: "translateY(0) scale(1)", filter: "blur(0)" },
+            ],
+            {
+              duration: 340,
+              easing: "cubic-bezier(0.22, 1, 0.36, 1)",
+              fill: "both",
+            }
+          )
+        );
+
+        await Promise.all(inAnims.map((a) => a.finished.catch(() => null)));
+      }
 
       // Start or restart the progress interval (throttled to reduce CPU)
       function startProgressInterval() {
@@ -1146,11 +1606,16 @@
         }, 250); // slower updates to save CPU on low-power devices
       }
 
-      socket.on("musicData", (data) => {
+      socket.on("musicData", async (data) => {
         // Clear previous timers
         if (musicTimeout) clearTimeout(musicTimeout);
         if (progressInterval) clearInterval(progressInterval);
-        stopLyricsSync();
+        // Entre deux morceaux, on passe en état loading (pas fullscreen immédiat)
+        // pour éviter un aller-retour visuel avant le résultat des paroles.
+        stopLyricsSync("loading");
+
+        const nextSongKey = `${data.title || ""}__${data.artist || ""}`;
+        const isSongChanged = nextSongKey !== currentSongKey;
 
         // Store timing FIRST (needed for lyrics sync)
         musicInitialPosition = data.position || 0;
@@ -1161,10 +1626,13 @@
         if (musicDurationEl)
           musicDurationEl.textContent = formatTime(musicDuration);
 
-        // Update music info
-        trackEl.textContent = data.title;
-        artistEl.textContent = data.artist;
-        coverEl.src = data.cover || "";
+        await animateSongChangeIfNeeded(isSongChanged, () => {
+          // Update music info
+          trackEl.textContent = data.title || "Titre inconnu";
+          artistEl.textContent = data.artist || "Artiste inconnu";
+          setCoverWithFallback(data.cover);
+        });
+        currentSongKey = nextSongKey;
 
         // Fetch and display lyrics (async, timing vars already set)
         fetchLyrics(data.title, data.artist).then((syncedLyrics) => {
@@ -1200,8 +1668,14 @@
               `;
             } catch (e) {
               console.error("Color extraction failed:", e);
+              resetMusicCardBackground();
             }
           };
+          img.onerror = () => {
+            resetMusicCardBackground();
+          };
+        } else {
+          resetMusicCardBackground();
         }
 
         // Show music card with animation

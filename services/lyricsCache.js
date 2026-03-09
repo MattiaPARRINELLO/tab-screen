@@ -175,26 +175,13 @@ async function getLyrics(track, artist) {
 }
 
 function pruneOld() {
+    // Cache désormais persistant : pas de suppression automatique
     ensureCacheDir();
-    const files = fs.readdirSync(CACHE_DIR).map(f => path.join(CACHE_DIR, f));
-    const now = Date.now();
-
-    // Remove files older than MAX_AGE_DAYS
-    for (const f of files) {
-        try {
-            const stat = fs.statSync(f);
-            if (now - stat.mtimeMs > MAX_AGE_DAYS * 24 * 60 * 60 * 1000) {
-                fs.unlinkSync(f);
-            }
-        } catch (e) { }
-    }
-    // no size-based pruning (unlimited cache size per configuration)
 }
 
 function startCleanup() {
-    // Run prune on startup and then once per day
-    try { pruneOld(); } catch (e) { }
-    setInterval(() => { try { pruneOld(); } catch (e) { } }, 24 * 60 * 60 * 1000);
+    // Cache persistant : nettoyage désactivé
+    ensureCacheDir();
 }
 
 module.exports = { getLyrics, startCleanup };

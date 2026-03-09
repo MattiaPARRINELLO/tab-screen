@@ -1,27 +1,129 @@
-<!-- public/index.html - Interface de contrôle avec options complètes -->
+<!-- public/index.html - Interface de contrôle + simulateur musique -->
 <!DOCTYPE html>
 <html lang="fr">
   <head>
     <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Contrôle Affichage</title>
     <style>
+      :root {
+        --bg: #f2f2f2;
+        --card: #ffffff;
+        --text: #333;
+        --muted: #666;
+        --accent: #3b82f6;
+        --accent-hover: #2563eb;
+        --border: #e5e7eb;
+        --success: #0f766e;
+        --error: #b91c1c;
+      }
+
       body {
         font-family: "Inter", sans-serif;
-        padding: 2em;
-        background: #f2f2f2;
-        color: #333;
+        padding: 2rem;
+        background: var(--bg);
+        color: var(--text);
+        max-width: 900px;
+        margin: 0 auto;
       }
+
+      h1 {
+        margin-bottom: 0.5rem;
+      }
+
+      p {
+        color: var(--muted);
+        line-height: 1.45;
+      }
+
+      .panel {
+        margin-top: 2rem;
+        padding: 1.25rem;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        background: var(--card);
+      }
+
+      .panel h2 {
+        margin: 0 0 0.75rem;
+        font-size: 1.2rem;
+      }
+
       label {
         display: flex;
+        flex-direction: column;
+        align-items: flex-start;
         align-items: center;
-        gap: 0.5em;
-        margin: 1em 0;
+        gap: 0.35rem;
+        margin: 0.75rem 0;
+        font-weight: 600;
       }
-      .color-picker {
-        height: 2em;
-        width: 2em;
-        border: none;
-        border-radius: 0.5em;
+
+      input {
+        width: 100%;
+        padding: 0.65rem 0.75rem;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        font-size: 0.95rem;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.75rem;
+      }
+
+      .actions {
+        display: flex;
+        gap: 0.75rem;
+        margin-top: 1rem;
+      }
+
+      button {
+        border: 0;
+        background: var(--accent);
+        color: #fff;
+        padding: 0.7rem 1rem;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+
+      button:hover {
+        background: var(--accent-hover);
+      }
+
+      button.secondary {
+        background: #6b7280;
+      }
+
+      .hint {
+        margin-top: 0.65rem;
+        font-size: 0.88rem;
+        color: var(--muted);
+      }
+
+      #status {
+        margin-top: 0.9rem;
+        font-size: 0.92rem;
+      }
+
+      #status.ok {
+        color: var(--success);
+      }
+
+      #status.err {
+        color: var(--error);
+      }
+
+      @media (max-width: 700px) {
+        body {
+          padding: 1rem;
+        }
+
+        .grid {
+          grid-template-columns: 1fr;
+        }
       }
     </style>
   </head>
@@ -33,5 +135,116 @@
       musique apparaît uniquement lorsqu'une musique est en cours de lecture.
     </p>
     <p>Voir l'écran: <a href="/screen">Ouvrir l'écran</a></p>
+
+    <section class="panel">
+      <h2>Simulation musique</h2>
+      <p>
+        Cette zone envoie exactement la même requête que l'usage normal vers
+        l'API existante <strong>/api/music</strong>.
+      </p>
+
+      <form id="musicForm">
+        <label for="title">
+          Titre (utilisé pour retrouver les paroles)
+          <input id="title" name="title" type="text" required placeholder="Ex: Numb" />
+        </label>
+
+        <label for="artist">
+          Artiste
+          <input id="artist" name="artist" type="text" required placeholder="Ex: Linkin Park" />
+        </label>
+
+        <div class="grid">
+          <label for="duration">
+            Durée (secondes)
+            <input id="duration" name="duration" type="number" min="1" step="1" value="180" required />
+          </label>
+
+          <label for="position">
+            Position de départ (secondes)
+            <input id="position" name="position" type="number" min="0" step="1" value="0" required />
+          </label>
+        </div>
+
+        <div class="actions">
+          <button type="submit">Envoyer la simulation</button>
+          <button type="button" class="secondary" id="fillDemo">Exemple</button>
+        </div>
+      </form>
+
+      <div class="hint">
+        Les paroles ne sont pas envoyées directement ici : elles seront récupérées
+        automatiquement sur l'écran via le couple titre + artiste, comme en
+        production.
+      </div>
+      <div id="status" aria-live="polite"></div>
+    </section>
+
+    <script>
+      const form = document.getElementById("musicForm");
+      const statusEl = document.getElementById("status");
+      const fillDemoBtn = document.getElementById("fillDemo");
+
+      function setStatus(message, ok = true) {
+        statusEl.textContent = message;
+        statusEl.className = ok ? "ok" : "err";
+      }
+
+      fillDemoBtn.addEventListener("click", () => {
+        document.getElementById("title").value = "Numb";
+        document.getElementById("artist").value = "Linkin Park";
+        document.getElementById("duration").value = "185";
+        document.getElementById("position").value = "0";
+      });
+
+      form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+
+        const title = document.getElementById("title").value.trim();
+        const artist = document.getElementById("artist").value.trim();
+        const duration = Number(document.getElementById("duration").value || 0);
+        const position = Number(document.getElementById("position").value || 0);
+
+        if (!title || !artist) {
+          setStatus("Titre et artiste sont obligatoires.", false);
+          return;
+        }
+
+        if (!Number.isFinite(duration) || duration <= 0) {
+          setStatus("La durée doit être un nombre supérieur à 0.", false);
+          return;
+        }
+
+        if (!Number.isFinite(position) || position < 0) {
+          setStatus("La position doit être un nombre positif.", false);
+          return;
+        }
+
+        if (position >= duration) {
+          setStatus("La position doit être inférieure à la durée.", false);
+          return;
+        }
+
+        setStatus("Envoi en cours...");
+
+        try {
+          const response = await fetch("/api/music", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ title, artist, duration, position }),
+          });
+
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+          }
+
+          setStatus("Simulation envoyée. Vérifie l'écran /screen.");
+        } catch (error) {
+          setStatus(`Erreur pendant l'envoi: ${error.message}`, false);
+        }
+      });
+    </script>
   </body>
 </html>
