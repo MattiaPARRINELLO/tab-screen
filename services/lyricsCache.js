@@ -79,14 +79,39 @@ async function writeCache(hash, obj) {
 
 async function fetchFromRemote(artist, track) {
     try {
-        const params = new URLSearchParams({ track_name: track, artist_name: artist });
-        const res = await fetch(`https://lrclib.net/api/search?${params.toString()}`);
-        if (!res.ok) return null;
-        const data = await res.json();
-        if (!data || data.length === 0) return null;
-        const match = data.find(item => item.syncedLyrics);
-        if (!match || !match.syncedLyrics) return null;
-        return match.syncedLyrics;
+        const pickSynced = (data) => {
+            if (!Array.isArray(data) || data.length === 0) return null;
+            const match = data.find(item => item && typeof item.syncedLyrics === 'string' && item.syncedLyrics.trim());
+            return match ? match.syncedLyrics : null;
+        };
+
+        // 1) Strict search by dedicated fields
+        const strictParams = new URLSearchParams({ track_name: track, artist_name: artist });
+        const strictRes = await fetch(`https://lrclib.net/api/search?${strictParams.toString()}`);
+        if (strictRes.ok) {
+            const strictData = await strictRes.json();
+            const strictSynced = pickSynced(strictData);
+            if (strictSynced) return strictSynced;
+        }
+
+        // 2) Fallback global search with quoted query
+        const quotedQuery = `"${(track || '').trim()} ${(artist || '').trim()}"`.trim();
+        const quotedParams = new URLSearchParams({ q: quotedQuery });
+        const quotedRes = await fetch(`https://lrclib.net/api/search?${quotedParams.toString()}`);
+        if (quotedRes.ok) {
+            const quotedData = await quotedRes.json();
+            const quotedSynced = pickSynced(quotedData);
+            if (quotedSynced) return quotedSynced;
+        }
+
+        // 3) Fallback global search without quotes
+        const looseQuery = `${(track || '').trim()} ${(artist || '').trim()}`.trim();
+        if (!looseQuery) return null;
+        const looseParams = new URLSearchParams({ q: looseQuery });
+        const looseRes = await fetch(`https://lrclib.net/api/search?${looseParams.toString()}`);
+        if (!looseRes.ok) return null;
+        const looseData = await looseRes.json();
+        return pickSynced(looseData);
     } catch (e) {
         return null;
     }
