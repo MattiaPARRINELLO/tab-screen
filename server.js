@@ -3,6 +3,8 @@ const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
 const fetch = require('node-fetch');
+const fs = require('fs');
+const path = require('path');
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
@@ -16,6 +18,51 @@ const OPENWEATHER_API_KEY = process.env.OPENWEATHER_API_KEY
 const VILLE = 'Franconville' // Ville par défaut;
 const VILLE_SHORT = 'Franconville' // Ville courte pour l'affichage
 const LASTFM_API_KEY = process.env.LASTFM_API_KEY
+const NO_LYRICS_PATH = path.join(__dirname, 'cache', 'no-lyrics.json');
+
+function ensureNoLyricsFile() {
+    const dir = path.dirname(NO_LYRICS_PATH);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    if (!fs.existsSync(NO_LYRICS_PATH)) fs.writeFileSync(NO_LYRICS_PATH, JSON.stringify([], null, 2), 'utf8');
+}
+
+async function addNoLyricsEntry(track, artist) {
+    ensureNoLyricsFile();
+    const safeTrack = String(track || '').trim();
+    const safeArtist = String(artist || '').trim();
+    if (!safeTrack && !safeArtist) return;
+    const pair = [safeTrack, safeArtist];
+
+    let list = [];
+    try {
+        const content = await fs.promises.readFile(NO_LYRICS_PATH, 'utf8');
+        const parsed = JSON.parse(content);
+        if (Array.isArray(parsed)) {
+            list = parsed
+                .map((item) => {
+                    if (Array.isArray(item) && item.length >= 2) {
+                        return [String(item[0] || '').trim(), String(item[1] || '').trim()];
+                    }
+                    if (typeof item === 'string') {
+                        const m = item.match(/^\[\[(.*?),\s*(.*?)\s*\]\]$/);
+                        if (m) return [String(m[1] || '').trim(), String(m[2] || '').trim()];
+                    }
+                    return null;
+                })
+                .filter(Boolean);
+        }
+    } catch (e) {
+        list = [];
+    }
+
+    const alreadyExists = list.some((item) => Array.isArray(item) && item[0] === safeTrack && item[1] === safeArtist);
+
+    if (!alreadyExists) {
+        list.push(pair);
+    }
+
+    await fs.promises.writeFile(NO_LYRICS_PATH, JSON.stringify(list, null, 2), 'utf8');
+}
 
 async function convertVilleToCoords(ville) {
     // http://api.openweathermap.org/geo/1.0/direct?q={city name},{state code},{country code}&limit={limit}&appid={API key}
@@ -249,6 +296,7 @@ app.get('/api/lyrics', async (req, res) => {
             return res.json({ syncedLyrics: fallback.syncedLyrics, usedVariant: fallback.used });
         }
 
+        await addNoLyricsEntry(track, artist);
         return res.status(404).json({ error: 'Paroles introuvables' });
     } catch (err) {
         console.error('Erreur /api/lyrics:', err);
@@ -283,4 +331,25 @@ app.get('/api/lyrics-cache/:file', async (req, res) => {
 // Serve simple UI to browse cache
 app.get('/cache', (req, res) => {
     res.sendFile(__dirname + '/public/cache.html');
+});
+
+app.get('/nolyrics', (req, res) => {
+    try {
+        ensureNoLyricsFile();
+        return res.sendFile(NO_LYRICS_PATH);
+    } catch (err) {
+        console.error('Erreur /nolyrics:', err);
+        return res.status(500).json([]);
+    }
+});
+
+app.post('/api/nolyrics/reset', async (req, res) => {
+    try {
+        ensureNoLyricsFile();
+        await fs.promises.writeFile(NO_LYRICS_PATH, JSON.stringify([], null, 2), 'utf8');
+        return res.json({ ok: true });
+    } catch (err) {
+        console.error('Erreur /api/nolyrics/reset:', err);
+        return res.status(500).json({ ok: false });
+    }
 });

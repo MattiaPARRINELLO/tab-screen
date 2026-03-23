@@ -3,6 +3,8 @@
     const modal = document.getElementById('lyricsModal');
     const lyricsContent = document.getElementById('lyricsContent');
     const closeBtn = document.getElementById('closeBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const nolyricsBtn = document.getElementById('nolyricsBtn');
 
     function fmtDate(ts) {
         try { return new Date(ts).toLocaleString(); } catch (e) { return '' }
@@ -54,6 +56,19 @@
 
     closeBtn.addEventListener('click', () => { modal.style.display = 'none'; });
     modal.addEventListener('click', (e) => { if (e.target === modal) modal.style.display = 'none'; });
+    if (resetBtn) resetBtn.addEventListener('click', async () => {
+        try {
+            const r = await fetch('/api/nolyrics/reset', { method: 'POST' });
+            if (!r.ok) {
+                alert('Erreur lors du reset no-lyrics');
+                return;
+            }
+            location.reload();
+        } catch (e) {
+            alert('Erreur lors du reset no-lyrics');
+        }
+    });
+    if (nolyricsBtn) nolyricsBtn.addEventListener('click', () => { window.open('/nolyrics', '_blank'); });
 
     load();
 })();
