@@ -1680,17 +1680,19 @@
         currentSongKey = nextSongKey;
 
         // Fetch and display lyrics (async, timing vars already set)
-        fetchLyrics(data.title, data.artist, data.album).then((syncedLyrics) => {
-          if (syncedLyrics) {
-            const lyrics = parseLRC(syncedLyrics);
-            if (lyrics.length > 0) {
-              renderLyrics(lyrics);
-              startLyricsSync();
-            } else {
-              setLyricsState("none");
+        fetchLyrics(data.title, data.artist, data.album).then(
+          (syncedLyrics) => {
+            if (syncedLyrics) {
+              const lyrics = parseLRC(syncedLyrics);
+              if (lyrics.length > 0) {
+                renderLyrics(lyrics);
+                startLyricsSync();
+              } else {
+                setLyricsState("none");
+              }
             }
-          }
-        });
+          },
+        );
 
         // Extract dominant color from cover
         if (data.cover) {
