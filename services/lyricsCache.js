@@ -17,8 +17,8 @@ function ensureCacheDir() {
     }
 }
 
-function keyHash(artist, track) {
-    const key = `${artist || ''}|||${track || ''}`.toLowerCase();
+function keyHash(artist, track, album) {
+    const key = `${artist || ''}|||${track || ''}|||${album || ''}`.toLowerCase();
     return crypto.createHash('sha1').update(key).digest('hex');
 }
 
@@ -77,7 +77,7 @@ async function writeCache(hash, obj) {
     }
 }
 
-async function fetchFromRemote(artist, track) {
+async function fetchFromRemote(artist, track, album) {
     try {
         const pickSynced = (data) => {
             if (!Array.isArray(data) || data.length === 0) return null;
@@ -85,8 +85,24 @@ async function fetchFromRemote(artist, track) {
             return match ? match.syncedLyrics : null;
         };
 
-        // 1) Strict search by dedicated fields
+        // 1) Precise get by dedicated fields (album optional)
+        const getParams = new URLSearchParams({ track_name: track, artist_name: artist });
+        if (album && String(album).trim()) {
+            getParams.set('album_name', String(album).trim());
+        }
+        const getRes = await fetch(`https://lrclib.net/api/get?${getParams.toString()}`);
+        if (getRes.ok) {
+            const getData = await getRes.json();
+            if (getData && typeof getData.syncedLyrics === 'string' && getData.syncedLyrics.trim()) {
+                return getData.syncedLyrics;
+            }
+        }
+
+        // 2) Strict search by dedicated fields
         const strictParams = new URLSearchParams({ track_name: track, artist_name: artist });
+        if (album && String(album).trim()) {
+            strictParams.set('album_name', String(album).trim());
+        }
         const strictRes = await fetch(`https://lrclib.net/api/search?${strictParams.toString()}`);
         if (strictRes.ok) {
             const strictData = await strictRes.json();
@@ -94,7 +110,7 @@ async function fetchFromRemote(artist, track) {
             if (strictSynced) return strictSynced;
         }
 
-        // 2) Fallback global search with quoted query
+        // 3) Fallback global search with quoted query
         const quotedQuery = `"${(track || '').trim()} ${(artist || '').trim()}"`.trim();
         const quotedParams = new URLSearchParams({ q: quotedQuery });
         const quotedRes = await fetch(`https://lrclib.net/api/search?${quotedParams.toString()}`);
@@ -104,7 +120,7 @@ async function fetchFromRemote(artist, track) {
             if (quotedSynced) return quotedSynced;
         }
 
-        // 3) Fallback global search without quotes
+        // 4) Fallback global search without quotes
         const looseQuery = `${(track || '').trim()} ${(artist || '').trim()}`.trim();
         if (!looseQuery) return null;
         const looseParams = new URLSearchParams({ q: looseQuery });
@@ -161,9 +177,9 @@ function generateVariants(originalTrack, originalArtist) {
     });
 }
 
-async function getLyrics(track, artist) {
+async function getLyrics(track, artist, album) {
     ensureCacheDir();
-    const hash = keyHash(artist, track);
+    const hash = keyHash(artist, track, album);
     const existing = await readCache(hash);
     const now = Date.now();
 
@@ -179,7 +195,7 @@ async function getLyrics(track, artist) {
     const variants = generateVariants(track, artist);
     let found = null;
     for (const v of variants) {
-        const syncedRaw = await fetchFromRemote(v.artist, v.track);
+        const syncedRaw = await fetchFromRemote(v.artist, v.track, album);
         if (syncedRaw) {
             found = { syncedRaw, used: v };
             break;
@@ -189,7 +205,7 @@ async function getLyrics(track, artist) {
     if (found) {
         const synced = minifyLRC(found.syncedRaw);
         // store metadata with original track/artist but note used variant in stored track if desired
-        const obj = { track, artist, syncedLyrics: synced, timestamp: now };
+        const obj = { track, artist, album: album || null, syncedLyrics: synced, timestamp: now };
         await writeCache(hash, obj);
         return synced;
     }
@@ -226,6 +242,7 @@ async function listCached() {
                 file: f,
                 track: obj.track || null,
                 artist: obj.artist || null,
+                album: obj.album || null,
                 timestamp: obj.timestamp || stat.mtimeMs,
                 size: stat.size,
                 preview: typeof obj.syncedLyrics === 'string' ? obj.syncedLyrics.split('\n')[0] : null
@@ -258,16 +275,16 @@ async function readEntryByFile(fileName) {
 
 module.exports = { getLyrics, startCleanup, listCached, readEntryByFile };
 
-async function tryVariants(track, artist) {
+async function tryVariants(track, artist, album) {
     ensureCacheDir();
-    const hash = keyHash(artist, track);
+    const hash = keyHash(artist, track, album);
     const variants = generateVariants(track, artist);
     for (const v of variants) {
         try {
-            const syncedRaw = await fetchFromRemote(v.artist, v.track);
+            const syncedRaw = await fetchFromRemote(v.artist, v.track, album);
             if (syncedRaw) {
                 const synced = minifyLRC(syncedRaw);
-                const obj = { track, artist, syncedLyrics: synced, timestamp: Date.now() };
+                const obj = { track, artist, album: album || null, syncedLyrics: synced, timestamp: Date.now() };
                 await writeCache(hash, obj);
                 return { syncedLyrics: synced, used: v };
             }

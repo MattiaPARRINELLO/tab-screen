@@ -166,7 +166,7 @@ curl -X POST http://localhost:3000/api/music \
 | `/api/weather`            | GET     | Météo actuelle                                |
 | `/api/forecast`           | GET     | Prévisions (5h)                               |
 | `/api/music`              | POST    | Envoyer infos musique                         |
-| `/api/lyrics`             | GET     | Récupérer paroles (params: `track`, `artist`) |
+| `/api/lyrics`             | GET     | Récupérer paroles (params: `track`, `artist`, `album` optionnel) |
 | `/api/lyrics-cache`       | GET     | Liste du cache                                |
 | `/api/lyrics-cache/:file` | GET     | Détails d'une entrée                          |
 

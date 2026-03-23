@@ -1193,7 +1193,7 @@
       /**
        * Fetch lyrics via server-side cache proxy (/api/lyrics)
        */
-      async function fetchLyrics(trackName, artistName) {
+      async function fetchLyrics(trackName, artistName, albumName) {
         setLyricsState("loading");
 
         try {
@@ -1201,6 +1201,9 @@
             track: trackName,
             artist: artistName,
           });
+          if (albumName && String(albumName).trim()) {
+            params.set("album", String(albumName).trim());
+          }
           const response = await fetch(`/api/lyrics?${params.toString()}`);
 
           if (!response.ok) {
@@ -1677,7 +1680,7 @@
         currentSongKey = nextSongKey;
 
         // Fetch and display lyrics (async, timing vars already set)
-        fetchLyrics(data.title, data.artist).then((syncedLyrics) => {
+        fetchLyrics(data.title, data.artist, data.album).then((syncedLyrics) => {
           if (syncedLyrics) {
             const lyrics = parseLRC(syncedLyrics);
             if (lyrics.length > 0) {

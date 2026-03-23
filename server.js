@@ -202,11 +202,12 @@ app.get("/api/forecast", async (req, res) => {
 
 // Reçoit les infos musicales depuis Tasker ou autre
 app.post('/api/music', async (req, res) => {
-    const { title, artist, position, duration } = req.body;
+    const { title, artist, album, position, duration } = req.body;
     if (title && artist) {
         currentMusic = {
             title,
             artist,
+            album: album || '',
             position: Number(position),
             duration: Number(duration),
             cover: '', // par défaut
@@ -281,16 +282,17 @@ try { lyricsCache.startCleanup(); } catch (e) { console.error('Lyrics cache star
 app.get('/api/lyrics', async (req, res) => {
     const track = req.query.track || req.query.track_name || req.query.trackName || req.query.trackName;
     const artist = req.query.artist || req.query.artist_name || req.query.artistName || req.query.artistName;
+    const album = req.query.album || req.query.album_name || req.query.albumName;
     if (!track || !artist) return res.status(400).json({ error: 'Missing track or artist' });
 
     try {
-        let syncedLyrics = await lyricsCache.getLyrics(track, artist);
+        let syncedLyrics = await lyricsCache.getLyrics(track, artist, album);
         if (syncedLyrics) {
             return res.json({ syncedLyrics });
         }
 
         // Try variants server-side (strip feat, etc.)
-        const fallback = await lyricsCache.tryVariants(track, artist);
+        const fallback = await lyricsCache.tryVariants(track, artist, album);
         if (fallback && fallback.syncedLyrics) {
             console.log('lyrics: used variant', fallback.used);
             return res.json({ syncedLyrics: fallback.syncedLyrics, usedVariant: fallback.used });
