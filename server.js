@@ -1,357 +1,356 @@
 // server.js
-const express = require('express');
-const http = require('http');
+const express    = require('express');
+const http       = require('http');
 const { Server } = require('socket.io');
-const fetch = require('node-fetch');
-const fs = require('fs');
-const path = require('path');
-const app = express();
-const server = http.createServer(app);
-const io = new Server(server);
-const dotenv = require('dotenv');
+const fetch      = require('node-fetch');
+const fs         = require('fs');
+const path       = require('path');
+const dotenv     = require('dotenv');
 const lyricsCache = require('./services/lyricsCache');
 
 dotenv.config();
 
-const PORT = process.env.PORT || 3000;
-const OPENWEATHER_API_KEY = process.env.OPENWEATHER_API_KEY
-const VILLE = 'Franconville' // Ville par défaut;
-const VILLE_SHORT = 'Franconville' // Ville courte pour l'affichage
-const LASTFM_API_KEY = process.env.LASTFM_API_KEY
-const NO_LYRICS_PATH = path.join(__dirname, 'cache', 'no-lyrics.json');
+const PORT               = process.env.PORT || 3000;
+const OPENWEATHER_API_KEY = process.env.OPENWEATHER_API_KEY;
+const LASTFM_API_KEY      = process.env.LASTFM_API_KEY;
+const VILLE               = process.env.VILLE       || 'Franconville';
+const VILLE_SHORT         = process.env.VILLE_SHORT || VILLE;
+const NO_LYRICS_PATH      = path.join(__dirname, 'cache', 'no-lyrics.json');
 
-function ensureNoLyricsFile() {
-    const dir = path.dirname(NO_LYRICS_PATH);
-    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-    if (!fs.existsSync(NO_LYRICS_PATH)) fs.writeFileSync(NO_LYRICS_PATH, JSON.stringify([], null, 2), 'utf8');
-}
+if (!OPENWEATHER_API_KEY) console.warn('[config] ⚠  OPENWEATHER_API_KEY manquante');
+if (!LASTFM_API_KEY)      console.warn('[config] ⚠  LASTFM_API_KEY manquante');
 
-async function addNoLyricsEntry(track, artist) {
-    ensureNoLyricsFile();
-    const safeTrack = String(track || '').trim();
-    const safeArtist = String(artist || '').trim();
-    if (!safeTrack && !safeArtist) return;
-    const pair = [safeTrack, safeArtist];
-
-    let list = [];
-    try {
-        const content = await fs.promises.readFile(NO_LYRICS_PATH, 'utf8');
-        const parsed = JSON.parse(content);
-        if (Array.isArray(parsed)) {
-            list = parsed
-                .map((item) => {
-                    if (Array.isArray(item) && item.length >= 2) {
-                        return [String(item[0] || '').trim(), String(item[1] || '').trim()];
-                    }
-                    if (typeof item === 'string') {
-                        const m = item.match(/^\[\[(.*?),\s*(.*?)\s*\]\]$/);
-                        if (m) return [String(m[1] || '').trim(), String(m[2] || '').trim()];
-                    }
-                    return null;
-                })
-                .filter(Boolean);
-        }
-    } catch (e) {
-        list = [];
-    }
-
-    const alreadyExists = list.some((item) => Array.isArray(item) && item[0] === safeTrack && item[1] === safeArtist);
-
-    if (!alreadyExists) {
-        list.push(pair);
-    }
-
-    await fs.promises.writeFile(NO_LYRICS_PATH, JSON.stringify(list, null, 2), 'utf8');
-}
-
-async function convertVilleToCoords(ville) {
-    // http://api.openweathermap.org/geo/1.0/direct?q={city name},{state code},{country code}&limit={limit}&appid={API key}
-    try {
-        const url = `http://api.openweathermap.org/geo/1.0/direct?q=${ville}&limit=1&appid=${OPENWEATHER_API_KEY}`;
-        const response = await fetch(url);
-        const data = await response.json();
-        if (data.length > 0) {
-            const { lat, lon } = data[0];
-            console.log(`Coordonnées de ${ville}: Latitude: ${lat}, Longitude: ${lon}`);
-            return [lat, lon];
-        } else {
-            console.error('Ville non trouvée');
-        }
-    } catch (err) {
-        console.error('Erreur:', err);
-    }
-    return [0, 0]; // Valeurs par défaut si la ville n'est pas trouvée
-}
-
-let currentMusic = {
-    title: '',
-    artist: '',
-    position: 0,
-    duration: 0
-};
+const app    = express();
+const server = http.createServer(app);
+const io     = new Server(server);
 
 app.use(express.static('public'));
 app.use(express.json());
 
-const weatherIconMap = {
-    '01d': 'clear_day',
-    '01n': 'clear_night',
-    '02d': 'partly_cloudy_day',
-    '02n': 'partly_cloudy_night',
-    '03d': 'mostly_cloudy_day',
-    '03n': 'mostly_cloudy_night',
-    '04d': 'cloudy',
-    '04n': 'cloudy',
-    '09d': 'showers_rain',
-    '09n': 'showers_rain',
-    '10d': 'rain_with_cloudy_dark',
-    '10n': 'rain_with_cloudy_dark',
-    '11d': 'strong_thunderstorms',
-    '11n': 'strong_thunderstorms',
-    '13d': 'snow_with_cloudy_dark',
-    '13n': 'snow_with_cloudy_dark',
-    '50d': 'haze_fog_dust_smoke',
-    '50n': 'haze_fog_dust_smoke',
-    '12d': 'scattered_showers_day',
-    '12n': 'scattered_showers_night',
-    '14d': 'isolated_thunderstorms',
-    '14n': 'isolated_thunderstorms',
-    '15d': 'sleet_hail',
-    '15n': 'sleet_hail',
-    '16d': 'snow_with_rain_dark',
-    '16n': 'snow_with_rain_dark',
-    '17d': 'blizzard',
-    '17n': 'blizzard',
-    '18d': 'drizzle',
-    '18n': 'drizzle',
-    '19d': 'flurries',
-    '19n': 'flurries',
-    '20d': 'scattered_snow_showers_day',
-    '20n': 'scattered_snow_showers_night',
-    '21d': 'heavy_snow',
-    '21n': 'heavy_snow',
-    '22d': 'mixed_rain_hail_sleet',
-    '22n': 'mixed_rain_hail_sleet',
-    '23d': 'isolated_scattered_thunderstorms_day',
-    '23n': 'isolated_scattered_thunderstorms_night',
-    '24d': 'scattered_showers_day',
-    '24n': 'scattered_showers_night',
-    '25d': 'cloudy_with_rain_dark',
-    '25n': 'cloudy_with_rain_dark',
-    '26d': 'cloudy_with_snow_dark',
-    '26n': 'cloudy_with_snow_dark'
+// ──────────────────────────────────────────────
+// Helpers
+// ──────────────────────────────────────────────
+
+/** fetch avec timeout automatique (AbortController) */
+function fetchWithTimeout(url, timeoutMs = 5000, options = {}) {
+    const controller = new AbortController();
+    const id = setTimeout(() => controller.abort(), timeoutMs);
+    return fetch(url, { ...options, signal: controller.signal })
+        .finally(() => clearTimeout(id));
 }
 
-app.get('/', (req, res) => {
-    res.sendFile(__dirname + '/public/index.html');
-});
+// ──────────────────────────────────────────────
+// Cache météo en mémoire (évite un appel API par requête)
+// ──────────────────────────────────────────────
 
-app.get('/screen', (req, res) => {
-    res.sendFile(__dirname + '/public/screen.html');
-});
+const weatherCache = { coords: null, weather: null, forecast: null };
+const TTL = {
+    coords:   24 * 3600e3, // coordonnées : 24 h (ne changent jamais)
+    weather:  10 * 60e3,   // météo : 10 min
+    forecast: 30 * 60e3,   // prévisions : 30 min
+};
+const isFresh = (entry, ttl) => entry && (Date.now() - entry.ts) < ttl;
+
+async function getCoords() {
+    if (isFresh(weatherCache.coords, TTL.coords)) return weatherCache.coords.data;
+
+    const url = `https://api.openweathermap.org/geo/1.0/direct?q=${encodeURIComponent(VILLE)}&limit=1&appid=${OPENWEATHER_API_KEY}`;
+    const res  = await fetchWithTimeout(url, 6000);
+    const data = await res.json();
+
+    if (!Array.isArray(data) || !data.length) throw new Error(`Ville introuvable : ${VILLE}`);
+    const { lat, lon } = data[0];
+    console.log(`[weather] Coordonnées ${VILLE} : ${lat}, ${lon}`);
+    weatherCache.coords = { data: { lat, lon }, ts: Date.now() };
+    return { lat, lon };
+}
+
+// ──────────────────────────────────────────────
+// Icônes météo
+// ──────────────────────────────────────────────
+
+const weatherIconMap = {
+    '01d': 'clear_day',                        '01n': 'clear_night',
+    '02d': 'partly_cloudy_day',                '02n': 'partly_cloudy_night',
+    '03d': 'mostly_cloudy_day',                '03n': 'mostly_cloudy_night',
+    '04d': 'cloudy',                           '04n': 'cloudy',
+    '09d': 'showers_rain',                     '09n': 'showers_rain',
+    '10d': 'rain_with_cloudy_dark',            '10n': 'rain_with_cloudy_dark',
+    '11d': 'strong_thunderstorms',             '11n': 'strong_thunderstorms',
+    '13d': 'snow_with_cloudy_dark',            '13n': 'snow_with_cloudy_dark',
+    '50d': 'haze_fog_dust_smoke',              '50n': 'haze_fog_dust_smoke',
+};
+
+// ──────────────────────────────────────────────
+// État musique
+// ──────────────────────────────────────────────
+
+let currentMusic = { title: '', artist: '', position: 0, duration: 0 };
+
+// ──────────────────────────────────────────────
+// Routes statiques
+// ──────────────────────────────────────────────
+
+app.get('/',       (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
+app.get('/screen', (req, res) => res.sendFile(path.join(__dirname, 'public', 'screen.html')));
+app.get('/cache',  (req, res) => res.sendFile(path.join(__dirname, 'public', 'cache.html')));
+
+// ──────────────────────────────────────────────
+// Météo
+// ──────────────────────────────────────────────
 
 app.get('/api/weather', async (req, res) => {
-    try {
-        const [lat, lon] = await convertVilleToCoords(VILLE);
-        const url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=metric&lang=fr&appid=${OPENWEATHER_API_KEY}`;
-        console.log('URL:', url);
-        const response = await fetch(url);
-        const data = await response.json();
-        const iconCode = data.weather[0].icon;
-        const materialIcon = weatherIconMap[iconCode] || 'cloud';
+    // Retourner depuis le cache si frais
+    if (isFresh(weatherCache.weather, TTL.weather)) {
+        return res.json(weatherCache.weather.data);
+    }
 
-        res.json({
+    try {
+        const { lat, lon } = await getCoords();
+        const url  = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=metric&lang=fr&appid=${OPENWEATHER_API_KEY}`;
+        const resp = await fetchWithTimeout(url, 6000);
+        const data = await resp.json();
+
+        const iconCode = data.weather[0].icon;
+        const payload  = {
             name: VILLE_SHORT,
             temp: Math.round(data.main.temp),
             desc: data.weather[0].description,
-            icon: materialIcon
-        });
+            icon: weatherIconMap[iconCode] || 'cloudy',
+        };
+
+        weatherCache.weather = { data: payload, ts: Date.now() };
+        res.json(payload);
     } catch (e) {
-        console.error('Erreur récupération météo:', e);
+        console.error('[weather] Erreur :', e.message);
         res.status(500).json({ error: 'Erreur météo' });
     }
 });
 
-app.get("/api/forecast", async (req, res) => {
-    console.log("Requête prévisions météo reçue");
+app.get('/api/forecast', async (req, res) => {
+    if (isFresh(weatherCache.forecast, TTL.forecast)) {
+        return res.json(weatherCache.forecast.data);
+    }
+
     try {
-        const [lat, lon] = await convertVilleToCoords(VILLE);
-        const url = `https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&units=metric&appid=${OPENWEATHER_API_KEY}`;
-        const response = await fetch(url);
-        const data = await response.json();
-        console.log("Données prévisions météo reçues:", data);
+        const { lat, lon } = await getCoords();
+        const url  = `https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&units=metric&lang=fr&appid=${OPENWEATHER_API_KEY}`;
+        const resp = await fetchWithTimeout(url, 6000);
+        const data = await resp.json();
 
-        const simplified = data.list.slice(0, 5).map(f => {
-            const iconCode = f.weather[0].icon;
-            const materialIcon = weatherIconMap[iconCode] || 'cloud';
+        const list = data.list.slice(0, 5).map(f => ({
+            dt:          f.dt,
+            temp:        Math.round(f.main.temp),
+            description: f.weather[0].description,
+            icon:        weatherIconMap[f.weather[0].icon] || 'cloudy',
+        }));
 
-            return {
-                dt: f.dt,
-                temp: Math.round(f.main.temp),
-                description: f.weather[0].description,
-                icon: materialIcon
-            };
-        });
-
-        res.json({ list: simplified });
+        const payload = { list };
+        weatherCache.forecast = { data: payload, ts: Date.now() };
+        res.json(payload);
     } catch (err) {
-        console.error("Erreur prévisions météo :", err);
-        res.status(500).json({ error: "err" });
+        console.error('[forecast] Erreur :', err.message);
+        res.status(500).json({ error: 'Erreur prévisions' });
     }
 });
 
-// Reçoit les infos musicales depuis Tasker ou autre
+// ──────────────────────────────────────────────
+// Musique — reçu depuis Tasker / autre client
+// ──────────────────────────────────────────────
+
 app.post('/api/music', async (req, res) => {
     const { title, artist, album, position, duration } = req.body;
-    if (title && artist) {
-        currentMusic = {
-            title,
-            artist,
-            album: album || '',
-            position: Number(position),
-            duration: Number(duration),
-            cover: '', // par défaut
-            startTime: Date.now() // Enregistrer le timestamp de début
-        };
 
-        try {
-            const query = `artist:"${artist}" track:"${title}"`;
-            const deezerRes = await fetch(`https://api.deezer.com/search?q=${encodeURIComponent(query)}`);
-            const deezerData = await deezerRes.json();
-            if (deezerData.data && deezerData.data.length > 0) {
-                //search in the results where the title and artist match
-                const track = deezerData.data.find(item => item.title.toLowerCase() === title.toLowerCase() && item.artist.name.toLowerCase() === artist.toLowerCase());
-                if (track) {
-                    currentMusic.cover = track.album.cover_xl || '';
-                    currentMusic.deezerId = track.id;
-                } else {
-                    currentMusic.cover = await getAlbumCover(title, artist);
-                }
-            }
-        } catch (err) {
-            console.error("Erreur fetch Deezer:", err);
-        }
+    if (!title || !artist) return res.sendStatus(400);
 
-        io.emit('musicData', currentMusic);
-    }
+    currentMusic = {
+        title,
+        artist,
+        album:     album || '',
+        position:  Number(position)  || 0,
+        duration:  Number(duration)  || 0,
+        cover:     '',
+        startTime: Date.now(),
+    };
 
+    // Répondre et émettre immédiatement (sans attendre la cover)
     res.sendStatus(200);
+    io.emit('musicData', currentMusic);
+
+    // Chercher la cover de façon asynchrone, puis réémettre si trouvée
+    fetchCover(title, artist).then(cover => {
+        if (!cover) return;
+        // Vérifier que la musique n'a pas changé entre-temps
+        if (currentMusic.title !== title || currentMusic.artist !== artist) return;
+        currentMusic.cover = cover;
+        io.emit('musicData', { ...currentMusic, position: currentMusic.position + (Date.now() - currentMusic.startTime) / 1000 });
+    }).catch(() => {});
 });
 
-io.on('connection', (socket) => {
-    console.log('Client connecté');
-
-    // Envoyer les données de musique en cours si elles existent
-    if (currentMusic.title && currentMusic.artist) {
-        // Recalculer la position actuelle basée sur le temps écoulé
-        const timeElapsed = Date.now() - (currentMusic.startTime || Date.now());
-        const adjustedPosition = currentMusic.position + (timeElapsed / 1000);
-
-        // Ne pas envoyer si la chanson est terminée
-        if (adjustedPosition < currentMusic.duration) {
-            socket.emit('musicData', {
-                ...currentMusic,
-                position: adjustedPosition
-            });
-        }
-    }
-});
-
-async function getAlbumCover(title, artist) {
+/** Cherche la cover sur Deezer, puis Last.fm en fallback */
+async function fetchCover(title, artist) {
+    // Deezer
     try {
-        const url = `http://ws.audioscrobbler.com/2.0/?method=track.getInfo&api_key=${LASTFM_API_KEY}&artist=${encodeURIComponent(artist)}&track=${encodeURIComponent(title)}&format=json`;
-        const response = await fetch(url);
-        const data = await response.json();
+        const query    = `artist:"${artist}" track:"${title}"`;
+        const url      = `https://api.deezer.com/search?q=${encodeURIComponent(query)}`;
+        const resp     = await fetchWithTimeout(url, 5000);
+        const data     = await resp.json();
 
-        const image = data?.track?.album?.image?.find(img => img.size === 'extralarge')?.['#text'];
-        return image || '';
+        if (data.data?.length) {
+            const exact = data.data.find(
+                item => item.title.toLowerCase()       === title.toLowerCase()
+                     && item.artist.name.toLowerCase() === artist.toLowerCase()
+            );
+            const cover = (exact || data.data[0]).album.cover_xl;
+            if (cover) return cover;
+        }
     } catch (e) {
-        console.error('Erreur récupération cover:', e);
+        console.error('[cover] Deezer :', e.message);
+    }
+
+    // Last.fm fallback
+    try {
+        const url  = `https://ws.audioscrobbler.com/2.0/?method=track.getInfo&api_key=${LASTFM_API_KEY}&artist=${encodeURIComponent(artist)}&track=${encodeURIComponent(title)}&format=json`;
+        const resp = await fetchWithTimeout(url, 5000);
+        const data = await resp.json();
+        return data?.track?.album?.image?.find(img => img.size === 'extralarge')?.['#text'] || '';
+    } catch (e) {
+        console.error('[cover] Last.fm :', e.message);
         return '';
     }
 }
 
-server.listen(PORT, () => {
-    console.log(`Serveur sur http://localhost:${PORT}`);
+// ──────────────────────────────────────────────
+// Socket.IO — rattrapage à la connexion
+// ──────────────────────────────────────────────
+
+io.on('connection', socket => {
+    if (!currentMusic.title) return;
+
+    const elapsed         = (Date.now() - (currentMusic.startTime || Date.now())) / 1000;
+    const adjustedPosition = currentMusic.position + elapsed;
+
+    if (adjustedPosition < currentMusic.duration) {
+        socket.emit('musicData', { ...currentMusic, position: adjustedPosition });
+    }
 });
 
-// Start cache maintenance
-try { lyricsCache.startCleanup(); } catch (e) { console.error('Lyrics cache start failed', e); }
+// ──────────────────────────────────────────────
+// Paroles
+// ──────────────────────────────────────────────
 
-// Lyrics API proxy + cache
 app.get('/api/lyrics', async (req, res) => {
-    const track = req.query.track || req.query.track_name || req.query.trackName || req.query.trackName;
-    const artist = req.query.artist || req.query.artist_name || req.query.artistName || req.query.artistName;
-    const album = req.query.album || req.query.album_name || req.query.albumName;
+    const track  = req.query.track  || req.query.track_name  || req.query.trackName;
+    const artist = req.query.artist || req.query.artist_name || req.query.artistName;
+    const album  = req.query.album  || req.query.album_name  || req.query.albumName;
+
     if (!track || !artist) return res.status(400).json({ error: 'Missing track or artist' });
 
     try {
-        let syncedLyrics = await lyricsCache.getLyrics(track, artist, album);
-        if (syncedLyrics) {
-            return res.json({ syncedLyrics });
-        }
+        const syncedLyrics = await lyricsCache.getLyrics(track, artist, album);
+        if (syncedLyrics) return res.json({ syncedLyrics });
 
-        // Try variants server-side (strip feat, etc.)
         const fallback = await lyricsCache.tryVariants(track, artist, album);
-        if (fallback && fallback.syncedLyrics) {
-            console.log('lyrics: used variant', fallback.used);
+        if (fallback?.syncedLyrics) {
             return res.json({ syncedLyrics: fallback.syncedLyrics, usedVariant: fallback.used });
         }
 
         await addNoLyricsEntry(track, artist);
         return res.status(404).json({ error: 'Paroles introuvables' });
     } catch (err) {
-        console.error('Erreur /api/lyrics:', err);
+        console.error('[lyrics] Erreur :', err.message);
         res.status(500).json({ error: 'Erreur interne' });
     }
 });
 
-// Admin endpoint: list cached lyrics entries (decompressed & formatted)
 app.get('/api/lyrics-cache', async (req, res) => {
     try {
-        const list = await lyricsCache.listCached();
-        res.json({ list });
+        res.json({ list: await lyricsCache.listCached() });
     } catch (err) {
-        console.error('Erreur /api/lyrics-cache:', err);
+        console.error('[lyrics-cache] Erreur :', err.message);
         res.status(500).json({ error: 'Erreur interne' });
     }
 });
 
-// Return a single cache entry (decompressed) by file name
 app.get('/api/lyrics-cache/:file', async (req, res) => {
     try {
-        const file = req.params.file;
-        const entry = await lyricsCache.readEntryByFile(file);
+        const entry = await lyricsCache.readEntryByFile(req.params.file);
         if (!entry) return res.status(404).json({ error: 'Fichier introuvable' });
         res.json({ entry });
     } catch (err) {
-        console.error('Erreur /api/lyrics-cache/:file', err);
+        console.error('[lyrics-cache/:file] Erreur :', err.message);
         res.status(500).json({ error: 'Erreur interne' });
     }
 });
 
-// Serve simple UI to browse cache
-app.get('/cache', (req, res) => {
-    res.sendFile(__dirname + '/public/cache.html');
-});
+// ──────────────────────────────────────────────
+// No-lyrics list
+// ──────────────────────────────────────────────
+
+const NO_LYRICS_DIR = path.dirname(NO_LYRICS_PATH);
+
+function ensureNoLyricsFile() {
+    if (!fs.existsSync(NO_LYRICS_DIR))  fs.mkdirSync(NO_LYRICS_DIR, { recursive: true });
+    if (!fs.existsSync(NO_LYRICS_PATH)) fs.writeFileSync(NO_LYRICS_PATH, '[]', 'utf8');
+}
+
+async function addNoLyricsEntry(track, artist) {
+    ensureNoLyricsFile();
+    const safeTrack  = String(track  || '').trim();
+    const safeArtist = String(artist || '').trim();
+    if (!safeTrack && !safeArtist) return;
+
+    let list = [];
+    try {
+        const parsed = JSON.parse(await fs.promises.readFile(NO_LYRICS_PATH, 'utf8'));
+        if (Array.isArray(parsed)) {
+            list = parsed
+                .map(item => {
+                    if (Array.isArray(item) && item.length >= 2)
+                        return [String(item[0] || '').trim(), String(item[1] || '').trim()];
+                    if (typeof item === 'string') {
+                        const m = item.match(/^\[\[(.*?),\s*(.*?)\s*\]\]$/);
+                        if (m) return [m[1].trim(), m[2].trim()];
+                    }
+                    return null;
+                })
+                .filter(Boolean);
+        }
+    } catch { list = []; }
+
+    if (!list.some(([t, a]) => t === safeTrack && a === safeArtist)) {
+        list.push([safeTrack, safeArtist]);
+        await fs.promises.writeFile(NO_LYRICS_PATH, JSON.stringify(list, null, 2), 'utf8');
+    }
+}
 
 app.get('/nolyrics', (req, res) => {
-    try {
-        ensureNoLyricsFile();
-        return res.sendFile(NO_LYRICS_PATH);
-    } catch (err) {
-        console.error('Erreur /nolyrics:', err);
-        return res.status(500).json([]);
-    }
+    try   { ensureNoLyricsFile(); res.sendFile(NO_LYRICS_PATH); }
+    catch (err) { console.error('[nolyrics]', err.message); res.status(500).json([]); }
 });
 
 app.post('/api/nolyrics/reset', async (req, res) => {
     try {
         ensureNoLyricsFile();
-        await fs.promises.writeFile(NO_LYRICS_PATH, JSON.stringify([], null, 2), 'utf8');
-        return res.json({ ok: true });
+        await fs.promises.writeFile(NO_LYRICS_PATH, '[]', 'utf8');
+        res.json({ ok: true });
     } catch (err) {
-        console.error('Erreur /api/nolyrics/reset:', err);
-        return res.status(500).json({ ok: false });
+        console.error('[nolyrics/reset]', err.message);
+        res.status(500).json({ ok: false });
     }
+});
+
+// ──────────────────────────────────────────────
+// Démarrage
+// ──────────────────────────────────────────────
+
+// Préchauffer les coordonnées au démarrage (évite la latence au 1er appel météo)
+if (OPENWEATHER_API_KEY) {
+    getCoords().catch(e => console.error('[startup] Coordonnées :', e.message));
+}
+
+try { lyricsCache.startCleanup(); } catch (e) { console.error('[startup] Lyrics cache :', e); }
+
+server.listen(PORT, () => {
+    console.log(`[server] http://localhost:${PORT}`);
 });

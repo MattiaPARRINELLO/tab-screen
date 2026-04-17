@@ -13,49 +13,49 @@
     <style>
       /* ========== DESIGN SYSTEM ========== */
       :root {
-        /* Palette principale */
-        --bg-primary: #0a0e14;
-        --bg-secondary: #13171e;
-        --bg-card: rgba(25, 30, 40, 0.6);
-        --bg-card-hover: rgba(30, 36, 48, 0.8);
+        /* Fond */
+        --bg-primary: #07090f;
+        --bg-card: rgba(15, 19, 28, 0.72);
+        --bg-card-strong: rgba(18, 23, 34, 0.88);
 
-        /* Couleurs d'accent dynamiques */
+        /* Accents statiques */
         --accent-primary: #4ecdc4;
         --accent-secondary: #a78bfa;
-        --accent-warm: #ff6b9d;
-        --accent-gradient: linear-gradient(
-          135deg,
-          var(--accent-primary),
-          var(--accent-secondary)
-        );
+        --accent-gradient: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+
+        /* Couleur album dynamique — primaire et accent */
+        --album-r: 78;
+        --album-g: 205;
+        --album-b: 196;
+        --album-ar: 167;
+        --album-ag: 139;
+        --album-ab: 250;
 
         /* Texte */
-        --text-primary: #f8fafc;
-        --text-secondary: #94a3b8;
-        --text-muted: #64748b;
+        --text-primary: #eef2f7;
+        --text-secondary: #7e8a9e;
+        --text-muted: #3d4a5c;
 
-        /* Effets */
-        --blur-sm: blur(8px);
-        --blur-md: blur(16px);
-        --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.15);
-        --shadow-md: 0 4px 20px rgba(0, 0, 0, 0.25);
-        --shadow-lg: 0 8px 40px rgba(0, 0, 0, 0.4);
-        --shadow-glow: 0 0 30px rgba(78, 205, 196, 0.15);
+        /* Shadows */
+        --shadow-sm: 0 2px 10px rgba(0, 0, 0, 0.35);
+        --shadow-md: 0 6px 28px rgba(0, 0, 0, 0.45);
+        --shadow-lg: 0 16px 56px rgba(0, 0, 0, 0.6);
+        --shadow-glow: 0 0 50px rgba(var(--album-r), var(--album-g), var(--album-b), 0.22);
 
-        /* Spacing & Layout */
+        /* Spacing */
         --gap-sm: 0.75rem;
         --gap-md: 1.25rem;
         --gap-lg: 2rem;
         --radius-sm: 1rem;
         --radius-md: 1.5rem;
-        --radius-lg: 2rem;
+        --radius-lg: 2.5rem;
 
         /* Animations */
         --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
-        --ease-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);
-        --duration-fast: 0.2s;
+        --ease-spring: cubic-bezier(0.22, 1, 0.36, 1);
+        --duration-fast: 0.18s;
         --duration-normal: 0.4s;
-        --duration-slow: 0.8s;
+        --duration-slow: 0.85s;
       }
 
       /* ========== BASE STYLES ========== */
@@ -68,52 +68,165 @@
       body {
         background: var(--bg-primary);
         color: var(--text-primary);
-        font-family:
-          "Inter",
-          -apple-system,
-          system-ui,
-          sans-serif;
+        font-family: "Inter", -apple-system, system-ui, sans-serif;
+        font-feature-settings: "cv11" 1, "ss01" 1;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        text-rendering: optimizeLegibility;
         overflow: hidden;
         position: relative;
         width: 100vw;
         height: 100vh;
+        transition: background 2.2s cubic-bezier(0.25, 0.1, 0.25, 1);
       }
 
-      /* Ambient background particles */
+      /* Ambient background: slow-moving colour orbs */
       body::before {
         content: "";
-        position: absolute;
-        top: -50%;
-        left: -50%;
-        width: 200%;
-        height: 200%;
+        position: fixed;
+        inset: -30%;
+        z-index: -1;
         background:
-          radial-gradient(
-            circle at 20% 30%,
-            rgba(78, 205, 196, 0.08) 0%,
-            transparent 50%
-          ),
-          radial-gradient(
-            circle at 80% 70%,
+          radial-gradient(ellipse 55% 45% at 18% 22%,
+            rgba(var(--album-r), var(--album-g), var(--album-b), 0.07) 0%,
+            transparent 70%),
+          radial-gradient(ellipse 60% 50% at 82% 75%,
             rgba(167, 139, 250, 0.06) 0%,
-            transparent 50%
-          ),
-          radial-gradient(
-            circle at 50% 50%,
-            rgba(255, 107, 157, 0.04) 0%,
-            transparent 50%
-          );
-        animation: ambient 20s ease-in-out infinite alternate;
+            transparent 70%),
+          radial-gradient(ellipse 40% 35% at 50% 50%,
+            rgba(var(--album-r), var(--album-g), var(--album-b), 0.03) 0%,
+            transparent 60%);
+        animation: ambient 28s ease-in-out infinite alternate;
         pointer-events: none;
+        transition: background 2.2s cubic-bezier(0.25, 0.1, 0.25, 1);
+      }
+
+      /* Film grain texture */
+      body::after {
+        content: "";
+        position: fixed;
+        inset: 0;
+        z-index: 0;
+        pointer-events: none;
+        opacity: 0.038;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)'/%3E%3C/svg%3E");
+        background-size: 300px 300px;
+      }
+
+      /* Dynamic album color wash overlay */
+      .album-color-wash {
+        position: fixed;
+        inset: 0;
+        z-index: 0;
+        pointer-events: none;
+        opacity: 0;
+        mix-blend-mode: screen;
+        transition: opacity 2.5s cubic-bezier(0.25, 0.1, 0.25, 1);
+      }
+
+      .album-color-wash.active {
+        opacity: 1;
+        animation: washDrift 16s ease-in-out infinite alternate;
+      }
+
+      @keyframes washDrift {
+        0%   { transform: translate(0, 0) scale(1) rotate(0deg); }
+        30%  { transform: translate(-2.5%, -2%) scale(1.04) rotate(0.5deg); }
+        60%  { transform: translate(1.5%, -3.5%) scale(0.97) rotate(-0.3deg); }
+        100% { transform: translate(-1%, 2%) scale(1.03) rotate(0.2deg); }
+      }
+
+      /* ========== ANIMATED BACKGROUND ORBS ========== */
+      .bg-orb {
+        position: fixed;
+        pointer-events: none;
+        border-radius: 50%;
+        mix-blend-mode: screen;
+        opacity: 0;
+        will-change: transform, opacity;
+        transition:
+          opacity 2.5s cubic-bezier(0.25, 0.1, 0.25, 1),
+          background 2.5s cubic-bezier(0.25, 0.1, 0.25, 1);
+        z-index: 0;
+      }
+
+      .bg-orb.active { opacity: 1; }
+
+      /* Grand orbe primaire — bas-droite, là où est la musique */
+      .bg-orb-1 {
+        width: 80vw;
+        height: 70vh;
+        bottom: -18vh;
+        right: -18vw;
+        filter: blur(80px);
+        background: radial-gradient(
+          ellipse at 40% 40%,
+          rgba(var(--album-r), var(--album-g), var(--album-b), 0.5) 0%,
+          rgba(var(--album-r), var(--album-g), var(--album-b), 0.18) 40%,
+          transparent 68%
+        );
+        animation: orbDrift1 24s ease-in-out infinite alternate;
+      }
+
+      /* Orbe accent — haut-gauche */
+      .bg-orb-2 {
+        width: 60vw;
+        height: 55vh;
+        top: -12vh;
+        left: -12vw;
+        filter: blur(90px);
+        background: radial-gradient(
+          ellipse at 55% 55%,
+          rgba(var(--album-ar), var(--album-ag), var(--album-ab), 0.32) 0%,
+          rgba(var(--album-ar), var(--album-ag), var(--album-ab), 0.1) 45%,
+          transparent 70%
+        );
+        animation: orbDrift2 19s ease-in-out infinite alternate;
+      }
+
+      /* Petit orbe central — flotte entre les deux */
+      .bg-orb-3 {
+        width: 45vw;
+        height: 40vh;
+        top: 28vh;
+        left: 22vw;
+        filter: blur(100px);
+        background: radial-gradient(
+          circle at center,
+          rgba(var(--album-r), var(--album-g), var(--album-b), 0.22) 0%,
+          rgba(var(--album-ar), var(--album-ag), var(--album-ab), 0.1) 40%,
+          transparent 68%
+        );
+        animation: orbDrift3 15s ease-in-out infinite alternate;
+      }
+
+      @keyframes orbDrift1 {
+        0%   { transform: translate(0,    0)    scale(1)    rotate(0deg); }
+        20%  { transform: translate(-5vw, -3vh) scale(1.06) rotate(1deg); }
+        45%  { transform: translate(-2vw, -8vh) scale(0.95) rotate(-1.5deg); }
+        70%  { transform: translate(-7vw, -2vh) scale(1.08) rotate(2deg); }
+        100% { transform: translate(-3vw, -6vh) scale(1.03) rotate(-0.5deg); }
+      }
+
+      @keyframes orbDrift2 {
+        0%   { transform: translate(0,   0)   scale(1);    }
+        30%  { transform: translate(6vw, 5vh) scale(1.1);  }
+        60%  { transform: translate(3vw, 9vh) scale(0.93); }
+        100% { transform: translate(8vw, 3vh) scale(1.07); }
+      }
+
+      @keyframes orbDrift3 {
+        0%   { transform: translate(0,    0)    scale(1)    rotate(0deg);  }
+        35%  { transform: translate(-4vw, 5vh)  scale(1.14) rotate(5deg);  }
+        65%  { transform: translate(5vw,  -3vh) scale(0.89) rotate(-4deg); }
+        100% { transform: translate(-2vw, -5vh) scale(1.06) rotate(2deg);  }
       }
 
       @keyframes ambient {
-        0% {
-          transform: translate(0, 0) rotate(0deg);
-        }
-        100% {
-          transform: translate(5%, 3%) rotate(5deg);
-        }
+        0%   { transform: translate(0, 0) scale(1) rotate(0deg); }
+        33%  { transform: translate(3%, 2%) scale(1.04) rotate(2deg); }
+        66%  { transform: translate(-2%, 4%) scale(0.97) rotate(-1deg); }
+        100% { transform: translate(4%, -2%) scale(1.02) rotate(3deg); }
       }
 
       /* ========== LAYOUT GRID ========== */
@@ -132,38 +245,65 @@
       /* ========== CARD BASE ========== */
       .card {
         background: var(--bg-card);
-        backdrop-filter: var(--blur-md);
-        -webkit-backdrop-filter: var(--blur-md);
+        backdrop-filter: blur(32px) saturate(1.6) brightness(1.04);
+        -webkit-backdrop-filter: blur(32px) saturate(1.6) brightness(1.04);
         border: 1px solid rgba(255, 255, 255, 0.06);
         border-radius: var(--radius-lg);
         padding: var(--gap-lg);
-        box-shadow: var(--shadow-md);
+        box-shadow:
+          var(--shadow-md),
+          0 1px 0 rgba(255, 255, 255, 0.05) inset,
+          0 0 0 0.5px rgba(255, 255, 255, 0.04) inset;
         overflow: hidden;
         position: relative;
-        transition: all var(--duration-normal) var(--ease-smooth);
         display: flex;
         flex-direction: column;
-        min-height: 0; /* allow flex children to shrink inside grid cells */
+        min-height: 0;
         opacity: 0;
-        transform: scale(0.95) translateY(10px);
+        transform: scale(0.95) translateY(12px);
+        z-index: 1;
       }
 
+      /* Inner ambient light — top-left corner glow */
       .card::before {
         content: "";
         position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: var(--accent-gradient);
-        opacity: 0;
-        transition: opacity var(--duration-normal);
+        top: -30%;
+        left: -10%;
+        width: 65%;
+        height: 65%;
+        background: radial-gradient(
+          ellipse at center,
+          rgba(255, 255, 255, 0.045) 0%,
+          transparent 70%
+        );
         pointer-events: none;
-        z-index: -1;
+        z-index: 0;
       }
 
+      /* Top-edge glass shimmer line */
+      .card::after {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 8%;
+        right: 8%;
+        height: 1px;
+        background: linear-gradient(
+          90deg,
+          transparent 0%,
+          rgba(255, 255, 255, 0.14) 25%,
+          rgba(255, 255, 255, 0.22) 50%,
+          rgba(255, 255, 255, 0.14) 75%,
+          transparent 100%
+        );
+        pointer-events: none;
+      }
+
+      .card > * { position: relative; z-index: 1; }
+
       .card:not(.hidden) {
-        animation: cardEnter var(--duration-slow) var(--ease-smooth) forwards;
+        animation: cardEnter var(--duration-slow) var(--ease-spring) forwards;
       }
 
       .card.hidden {
@@ -171,37 +311,25 @@
         pointer-events: none;
       }
 
-      /* Subtle breathing animation */
       @keyframes breathe {
-        0%,
-        100% {
-          box-shadow: var(--shadow-md);
-          transform: scale(1);
-        }
-        50% {
-          box-shadow: var(--shadow-md), var(--shadow-glow);
-          transform: scale(1.005);
-        }
+        0%, 100% { box-shadow: var(--shadow-md), 0 1px 0 rgba(255,255,255,0.05) inset; }
+        50%       { box-shadow: var(--shadow-md), var(--shadow-glow), 0 1px 0 rgba(255,255,255,0.07) inset; }
       }
 
       .card:not(.hidden):not(#musicCard) {
         animation:
-          cardEnter var(--duration-slow) var(--ease-smooth) forwards,
-          breathe 8s ease-in-out 1s infinite;
+          cardEnter var(--duration-slow) var(--ease-spring) forwards,
+          breathe 12s ease-in-out 1.5s infinite;
       }
 
       @keyframes cardEnter {
-        to {
-          opacity: 1;
-          transform: scale(1) translateY(0);
-        }
+        0%   { opacity: 0; transform: scale(0.96) translateY(14px); filter: blur(8px); }
+        55%  { opacity: 0.9; filter: blur(1px); }
+        100% { opacity: 1; transform: scale(1) translateY(0); filter: blur(0); }
       }
 
       @keyframes cardExit {
-        to {
-          opacity: 0;
-          transform: scale(0.9) translateY(-10px);
-        }
+        to { opacity: 0; transform: scale(0.97) translateY(-10px); filter: blur(8px); }
       }
 
       /* ========== TIME CARD ========== */
@@ -209,39 +337,60 @@
         grid-column: 1 / 5;
         grid-row: 1 / 5;
         display: flex;
+        flex-direction: column;
         justify-content: center;
         align-items: center;
-        padding: calc(var(--gap-md) * 1.25);
+        gap: 0.6rem;
+        padding: var(--gap-lg);
       }
 
       .time-display {
-        font-size: clamp(2rem, 6vw, 4rem);
+        font-size: clamp(3.4rem, 9vw, 7rem);
         font-weight: 700;
-        letter-spacing: -0.03em;
-        background: var(--accent-gradient);
+        letter-spacing: -0.05em;
+        line-height: 1;
+        white-space: nowrap;
+        font-variant-numeric: tabular-nums;
+        background: linear-gradient(
+          150deg,
+          rgba(var(--album-r), var(--album-g), var(--album-b), 0.9) 0%,
+          var(--text-primary) 45%,
+          var(--text-primary) 65%,
+          rgba(var(--album-r), var(--album-g), var(--album-b), 0.6) 100%
+        );
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         background-clip: text;
-        text-shadow: 0 0 40px rgba(78, 205, 196, 0.3);
-        animation: timeGlow 8s ease-in-out infinite;
-        width: 100%;
-        height: 100%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        overflow: hidden;
-        white-space: nowrap;
-        padding: 0 var(--gap-sm);
+        filter: drop-shadow(0 0 28px rgba(var(--album-r), var(--album-g), var(--album-b), 0.25));
+        transition: filter 2s var(--ease-smooth);
+        animation: timeGlow 10s ease-in-out infinite;
+      }
+
+      .time-separator {
+        width: 40px;
+        height: 1.5px;
+        background: linear-gradient(
+          90deg,
+          transparent,
+          rgba(var(--album-r), var(--album-g), var(--album-b), 0.5),
+          transparent
+        );
+        border-radius: 2px;
+        transition: background 2s var(--ease-smooth);
+      }
+
+      .date-display {
+        font-size: clamp(0.8rem, 1.3vw, 1.05rem);
+        font-weight: 500;
+        color: var(--text-secondary);
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        opacity: 0.6;
       }
 
       @keyframes timeGlow {
-        0%,
-        100% {
-          filter: brightness(1);
-        }
-        50% {
-          filter: brightness(1.2);
-        }
+        0%, 100% { filter: drop-shadow(0 0 20px rgba(var(--album-r), var(--album-g), var(--album-b), 0.2)); }
+        50%       { filter: drop-shadow(0 0 40px rgba(var(--album-r), var(--album-g), var(--album-b), 0.4)); }
       }
 
       /* ========== WEATHER CARD ========== */
@@ -251,7 +400,7 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        padding: calc(var(--gap-md) * 1.25);
+        padding: var(--gap-lg);
       }
 
       .weather-content {
@@ -259,73 +408,105 @@
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        gap: var(--gap-lg);
+        gap: 0.5rem;
         width: 100%;
         height: 100%;
       }
 
       .weather-icon {
-        width: clamp(120px, 18vw, 180px);
-        height: clamp(120px, 18vw, 180px);
-        filter: drop-shadow(0 8px 20px rgba(78, 205, 196, 0.4));
-        animation: weatherFloat 12s ease-in-out infinite;
+        width: clamp(100px, 14vw, 155px);
+        height: clamp(100px, 14vw, 155px);
+        filter: drop-shadow(0 10px 32px rgba(var(--album-r), var(--album-g), var(--album-b), 0.4));
+        animation: weatherFloat 14s ease-in-out infinite;
+        flex-shrink: 0;
+        margin-bottom: 0.25rem;
+        transition: filter 2s var(--ease-smooth);
       }
 
       @keyframes weatherFloat {
-        0%,
-        100% {
-          transform: translateY(0px);
-        }
-        50% {
-          transform: translateY(-10px);
-        }
-      }
-
-      .weather-text {
-        text-align: center;
-        font-size: clamp(1.1rem, 2.5vw, 1.5rem);
-        font-weight: 500;
-        color: var(--text-secondary);
-        line-height: 1.4;
+        0%   { transform: translateY(0px) rotate(-0.5deg); }
+        30%  { transform: translateY(-8px) rotate(0.8deg); }
+        60%  { transform: translateY(-14px) rotate(-0.3deg); }
+        100% { transform: translateY(0px) rotate(-0.5deg); }
       }
 
       .weather-temp {
-        font-size: clamp(3rem, 6vw, 5rem);
+        font-size: clamp(4rem, 8vw, 6.5rem);
         font-weight: 700;
         color: var(--text-primary);
-        margin-top: 0.25rem;
-        text-shadow: 0 2px 12px rgba(78, 205, 196, 0.3);
-        width: 100%;
-        display: flex;
-        justify-content: center;
+        letter-spacing: -0.04em;
+        line-height: 1;
+        font-variant-numeric: tabular-nums;
+        text-shadow:
+          0 2px 0 rgba(0, 0, 0, 0.2),
+          0 0 40px rgba(var(--album-r), var(--album-g), var(--album-b), 0.25);
+        transition: text-shadow 2s var(--ease-smooth);
       }
 
-      /* ========== FORECAST CARD (HERO) ========== */
+      .weather-condition {
+        font-size: clamp(1rem, 1.8vw, 1.4rem);
+        font-weight: 400;
+        color: var(--text-secondary);
+        text-align: center;
+        line-height: 1.3;
+        margin-top: 0.2rem;
+        opacity: 0.85;
+      }
+
+      .weather-location {
+        font-size: clamp(0.75rem, 1.2vw, 0.95rem);
+        font-weight: 600;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: rgba(var(--album-r), var(--album-g), var(--album-b), 0.7);
+        margin-top: 0.15rem;
+        transition: color 2s var(--ease-smooth);
+      }
+
+      /* ========== FORECAST CARD ========== */
       #forecastCard {
         grid-column: 5 / 13;
         grid-row: 1 / 5;
         display: flex;
         flex-direction: column;
-        background: var(--bg-card-hover);
-        border: 1px solid rgba(78, 205, 196, 0.15);
-        transition: grid-row var(--duration-normal) var(--ease-smooth);
+        background: var(--bg-card-strong);
+        border: 1px solid rgba(var(--album-r), var(--album-g), var(--album-b), 0.1);
+        transition:
+          grid-row var(--duration-normal) var(--ease-smooth),
+          border-color 2.2s var(--ease-smooth);
       }
 
-      #forecastCard.expanded {
-        grid-row: 1 / 11;
-      }
-
-      #forecastCard::before {
-        opacity: 0.03;
-      }
+      #forecastCard.expanded { grid-row: 1 / 11; }
 
       .forecast-header {
-        font-size: 0.875rem;
-        font-weight: 600;
+        font-size: 0.72rem;
+        font-weight: 700;
         text-transform: uppercase;
-        letter-spacing: 0.1em;
+        letter-spacing: 0.14em;
         color: var(--text-muted);
         margin-bottom: var(--gap-md);
+        display: flex;
+        align-items: center;
+        gap: 0.55rem;
+      }
+
+      /* Pulsing live dot */
+      .forecast-header::before {
+        content: "";
+        flex-shrink: 0;
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: rgba(var(--album-r), var(--album-g), var(--album-b), 1);
+        box-shadow: 0 0 0 0 rgba(var(--album-r), var(--album-g), var(--album-b), 0.6);
+        animation: livePulse 2.5s ease-out infinite;
+        transition: background 2.2s var(--ease-smooth), box-shadow 2.2s var(--ease-smooth);
+      }
+
+      @keyframes livePulse {
+        0%   { box-shadow: 0 0 0 0 rgba(var(--album-r), var(--album-g), var(--album-b), 0.6); }
+        60%  { box-shadow: 0 0 0 7px rgba(var(--album-r), var(--album-g), var(--album-b), 0); }
+        100% { box-shadow: 0 0 0 0 rgba(var(--album-r), var(--album-g), var(--album-b), 0); }
       }
 
       .forecast-grid {
@@ -337,64 +518,101 @@
         height: 100%;
       }
 
-      #forecastCard.expanded .forecast-grid {
-        gap: var(--gap-md);
-      }
+      #forecastCard.expanded .forecast-grid { gap: var(--gap-md); }
 
       .forecast-item {
-        background: rgba(255, 255, 255, 0.03);
-        border: 1px solid rgba(255, 255, 255, 0.05);
+        background: linear-gradient(
+          160deg,
+          rgba(255, 255, 255, 0.04) 0%,
+          rgba(255, 255, 255, 0.015) 100%
+        );
+        border: 1px solid rgba(255, 255, 255, 0.055);
         border-radius: var(--radius-md);
-        padding: var(--gap-md);
+        padding: var(--gap-md) var(--gap-sm);
         display: flex;
         flex-direction: column;
         align-items: center;
-        gap: var(--gap-sm);
+        gap: 0.55rem;
         transition: all var(--duration-fast) var(--ease-smooth);
         height: 100%;
         justify-content: center;
+        position: relative;
+        overflow: hidden;
+      }
+
+      /* Accent stripe on hover */
+      .forecast-item::after {
+        content: "";
+        position: absolute;
+        top: 0; left: 15%; right: 15%;
+        height: 2px;
+        background: linear-gradient(
+          90deg,
+          transparent,
+          rgba(var(--album-r), var(--album-g), var(--album-b), 0.7),
+          transparent
+        );
+        border-radius: 0 0 4px 4px;
+        opacity: 0;
+        transform: scaleX(0.5);
+        transition:
+          opacity var(--duration-normal) var(--ease-smooth),
+          transform var(--duration-normal) var(--ease-spring);
       }
 
       .forecast-item:hover {
-        background: rgba(255, 255, 255, 0.05);
-        transform: translateY(-2px);
+        background: linear-gradient(
+          160deg,
+          rgba(var(--album-r), var(--album-g), var(--album-b), 0.08) 0%,
+          rgba(255, 255, 255, 0.02) 100%
+        );
+        border-color: rgba(var(--album-r), var(--album-g), var(--album-b), 0.18);
+        transform: translateY(-4px);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+      }
+
+      .forecast-item:hover::after {
+        opacity: 1;
+        transform: scaleX(1);
       }
 
       .forecast-time {
-        font-size: 0.75rem;
-        font-weight: 600;
-        color: var(--text-muted);
-        letter-spacing: 0.05em;
+        font-size: 0.8rem;
+        font-weight: 700;
+        color: rgba(var(--album-r), var(--album-g), var(--album-b), 0.75);
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        font-variant-numeric: tabular-nums;
+        transition: color 2.2s var(--ease-smooth);
       }
 
       .forecast-icon {
-        width: 48px;
-        height: 48px;
-        filter: drop-shadow(0 2px 8px rgba(78, 205, 196, 0.2));
+        width: 52px;
+        height: 52px;
+        filter: drop-shadow(0 4px 12px rgba(var(--album-r), var(--album-g), var(--album-b), 0.2));
         transition: all var(--duration-normal) var(--ease-smooth);
       }
 
-      #forecastCard.expanded .forecast-icon {
-        width: 72px;
-        height: 72px;
-      }
+      #forecastCard.expanded .forecast-icon { width: 76px; height: 76px; }
 
       .forecast-temp {
-        font-size: 1.5rem;
+        font-size: 1.65rem;
         font-weight: 700;
         color: var(--text-primary);
+        letter-spacing: -0.025em;
+        font-variant-numeric: tabular-nums;
         transition: font-size var(--duration-normal) var(--ease-smooth);
       }
 
-      #forecastCard.expanded .forecast-temp {
-        font-size: 2rem;
-      }
+      #forecastCard.expanded .forecast-temp { font-size: 2.3rem; }
 
       .forecast-desc {
-        font-size: 0.7rem;
+        font-size: 0.75rem;
+        font-weight: 400;
         color: var(--text-secondary);
         text-align: center;
         line-height: 1.3;
+        opacity: 0.65;
       }
 
       /* ========== MUSIC CARD ========== */
@@ -404,18 +622,23 @@
         flex-direction: column;
         align-items: stretch;
         justify-content: flex-start;
-        gap: calc(var(--gap-lg) * 1.5);
-        padding: calc(var(--gap-lg) * 1.5);
-        background: rgba(255, 107, 157, 0.15);
-        border: 1px solid rgba(255, 107, 157, 0.3);
+        gap: calc(var(--gap-lg) * 1.1);
+        padding: calc(var(--gap-lg) * 1.35);
+        background: linear-gradient(
+          150deg,
+          rgba(var(--album-r), var(--album-g), var(--album-b), 0.1) 0%,
+          rgba(var(--album-r), var(--album-g), var(--album-b), 0.04) 60%,
+          rgba(0, 0, 0, 0.1) 100%
+        );
+        border: 1px solid rgba(var(--album-r), var(--album-g), var(--album-b), 0.22);
+        transition:
+          background 2s var(--ease-smooth),
+          border-color 2s var(--ease-smooth),
+          box-shadow 2s var(--ease-smooth);
       }
 
       #musicCard:not(.hidden) {
-        animation: cardEnter var(--duration-slow) var(--ease-smooth) forwards;
-      }
-
-      #musicCard::before {
-        opacity: 0.1;
+        animation: cardEnter var(--duration-slow) var(--ease-spring) forwards;
       }
 
       .music-cover-wrapper {
@@ -423,29 +646,37 @@
         flex-shrink: 0;
       }
 
+      /* Glow blob sous la pochette */
+      .music-cover-wrapper::after {
+        content: "";
+        position: absolute;
+        bottom: -16px;
+        left: 0; right: 0;
+        height: 24px;
+        background: rgba(var(--album-r), var(--album-g), var(--album-b), 0.45);
+        filter: blur(16px);
+        border-radius: 50%;
+        pointer-events: none;
+        transition: background 2s var(--ease-smooth);
+      }
+
       .music-cover {
-        width: clamp(80px, 8vw, 100px);
-        height: clamp(80px, 8vw, 100px);
+        width: clamp(105px, 12vw, 148px);
+        height: clamp(105px, 12vw, 148px);
         border-radius: var(--radius-md);
         object-fit: cover;
         box-shadow:
           var(--shadow-lg),
-          0 0 40px rgba(255, 107, 157, 0.3);
-        animation: coverPulse 6s ease-in-out infinite;
+          0 0 60px rgba(var(--album-r), var(--album-g), var(--album-b), 0.45);
+        animation: coverPulse 7s ease-in-out infinite;
+        position: relative;
+        z-index: 1;
+        transition: box-shadow 2s var(--ease-smooth);
       }
 
       @keyframes coverPulse {
-        0%,
-        100% {
-          transform: scale(1);
-          box-shadow: var(--shadow-lg);
-        }
-        50% {
-          transform: scale(1.02);
-          box-shadow:
-            var(--shadow-lg),
-            0 0 30px rgba(255, 107, 157, 0.4);
-        }
+        0%, 100% { transform: scale(1); }
+        50%       { transform: scale(1.022); }
       }
 
       .music-info {
@@ -453,46 +684,77 @@
         display: flex;
         flex-direction: column;
         justify-content: center;
-        gap: 0.5rem;
+        gap: 0.35rem;
         min-width: 0;
       }
 
       .music-track {
-        font-size: clamp(1.125rem, 1.75vw, 1.5rem);
+        font-size: clamp(1.5rem, 2.4vw, 2.2rem);
         font-weight: 700;
         color: var(--text-primary);
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
         line-height: 1.2;
+        letter-spacing: -0.025em;
       }
 
       .music-artist {
-        font-size: clamp(0.875rem, 1.25vw, 1rem);
+        font-size: clamp(1.05rem, 1.55vw, 1.35rem);
         font-weight: 500;
-        color: var(--text-secondary);
+        color: rgba(var(--album-r), var(--album-g), var(--album-b), 0.88);
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
-        opacity: 0.9;
+        transition: color 2s var(--ease-smooth);
       }
 
       .music-progress {
         width: 100%;
         height: 4px;
-        background: rgba(255, 255, 255, 0.12);
+        background: rgba(255, 255, 255, 0.07);
         border-radius: 4px;
-        overflow: hidden;
-        margin-top: 0.5rem;
+        overflow: visible;
+        margin-top: 0.85rem;
+        position: relative;
       }
 
       .music-progress-bar {
         height: 100%;
-        background: var(--accent-gradient);
-        border-radius: 2px;
+        background: linear-gradient(
+          90deg,
+          rgba(var(--album-r), var(--album-g), var(--album-b), 1) 0%,
+          rgba(var(--album-r), var(--album-g), var(--album-b), 0.7) 100%
+        );
+        border-radius: 4px;
         width: 0%;
-        transition: width 200ms linear;
-        box-shadow: 0 0 18px rgba(78, 205, 196, 0.28);
+        transition:
+          width 200ms linear,
+          background 2s var(--ease-smooth);
+        box-shadow:
+          0 0 12px rgba(var(--album-r), var(--album-g), var(--album-b), 0.6),
+          0 0 24px rgba(var(--album-r), var(--album-g), var(--album-b), 0.25);
+        position: relative;
+      }
+
+      /* Dot à la tête de la barre */
+      .music-progress-bar::after {
+        content: "";
+        position: absolute;
+        right: -3px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: rgba(var(--album-r), var(--album-g), var(--album-b), 1);
+        box-shadow: 0 0 10px rgba(var(--album-r), var(--album-g), var(--album-b), 0.8);
+        opacity: 0;
+        transition: opacity 0.3s, background 2s var(--ease-smooth);
+      }
+
+      .music-progress:hover .music-progress-bar::after {
+        opacity: 1;
       }
 
       .music-progress-row {
@@ -504,13 +766,15 @@
 
       .music-duration {
         color: var(--text-secondary);
-        font-size: 0.8rem;
-        min-width: 42px;
+        font-size: 0.9rem;
+        font-weight: 500;
+        min-width: 46px;
         text-align: right;
-        opacity: 0.95;
+        opacity: 0.55;
+        font-variant-numeric: tabular-nums;
+        letter-spacing: 0.02em;
       }
 
-      /* Music bottom section */
       .music-bottom {
         display: flex;
         flex-direction: row;
@@ -518,9 +782,9 @@
         align-items: center;
         flex-shrink: 0;
         transition:
-          transform 450ms var(--ease-smooth),
-          gap 380ms var(--ease-smooth),
-          max-width 380ms var(--ease-smooth);
+          transform 500ms var(--ease-spring),
+          gap 400ms var(--ease-smooth),
+          max-width 400ms var(--ease-smooth);
       }
 
       .music-cover,
@@ -528,7 +792,7 @@
       .music-track,
       .music-artist,
       .music-progress-row {
-        transition: all 420ms var(--ease-smooth);
+        transition: all 450ms var(--ease-smooth);
       }
 
       /* ========== RESPONSIVE ADJUSTMENTS ========== */
@@ -594,19 +858,23 @@
         mask-image: linear-gradient(
           to bottom,
           transparent 0%,
-          rgba(0, 0, 0, 0.4) 15%,
-          rgba(0, 0, 0, 1) 40%,
-          rgba(0, 0, 0, 1) 60%,
-          rgba(0, 0, 0, 0.4) 85%,
+          rgba(0, 0, 0, 0.2) 8%,
+          rgba(0, 0, 0, 0.7) 20%,
+          rgba(0, 0, 0, 1) 35%,
+          rgba(0, 0, 0, 1) 65%,
+          rgba(0, 0, 0, 0.7) 80%,
+          rgba(0, 0, 0, 0.2) 92%,
           transparent 100%
         );
         -webkit-mask-image: linear-gradient(
           to bottom,
           transparent 0%,
-          rgba(0, 0, 0, 0.4) 15%,
-          rgba(0, 0, 0, 1) 40%,
-          rgba(0, 0, 0, 1) 60%,
-          rgba(0, 0, 0, 0.4) 85%,
+          rgba(0, 0, 0, 0.2) 8%,
+          rgba(0, 0, 0, 0.7) 20%,
+          rgba(0, 0, 0, 1) 35%,
+          rgba(0, 0, 0, 1) 65%,
+          rgba(0, 0, 0, 0.7) 80%,
+          rgba(0, 0, 0, 0.2) 92%,
           transparent 100%
         );
       }
@@ -620,26 +888,37 @@
         display: flex;
         flex-direction: column;
         align-items: center;
-        transition: transform 0.6s cubic-bezier(0.25, 0.1, 0.25, 1);
+        transition: transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+        will-change: transform;
       }
 
       .lyrics-loading,
       .lyrics-none {
-        display: none;
         flex-direction: column;
         align-items: center;
         justify-content: center;
         gap: 1rem;
         color: var(--text-muted);
-        font-size: 0.95rem;
+        font-size: 1rem;
         font-weight: 500;
         text-align: center;
         padding: 2rem;
+        display: flex;
+        opacity: 0;
+        transform: translateY(6px);
+        transition:
+          opacity 0.4s cubic-bezier(0.25, 0.1, 0.25, 1),
+          transform 0.4s cubic-bezier(0.25, 0.1, 0.25, 1);
+        pointer-events: none;
+        position: absolute;
+        inset: 0;
       }
 
       .lyrics-loading.active,
       .lyrics-none.active {
-        display: flex;
+        opacity: 1;
+        transform: translateY(0);
+        pointer-events: auto;
       }
 
       .lyrics-prestart {
@@ -790,12 +1069,13 @@
       }
 
       .lyrics-loading-spinner {
-        width: 24px;
-        height: 24px;
-        border: 2px solid rgba(255, 255, 255, 0.1);
-        border-top-color: var(--accent-primary);
+        width: 22px;
+        height: 22px;
+        border: 2px solid rgba(var(--album-r), var(--album-g), var(--album-b), 0.15);
+        border-top-color: rgba(var(--album-r), var(--album-g), var(--album-b), 0.9);
         border-radius: 50%;
-        animation: spin 2s linear infinite;
+        animation: spin 1.4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        transition: border-color 2s var(--ease-smooth);
       }
 
       @keyframes spin {
@@ -804,64 +1084,76 @@
         }
       }
 
+      .lyrics-line {
+        font-size: clamp(1.6rem, 2.2vw, 2.1rem);
+        font-weight: 500;
+        color: var(--text-secondary);
+        text-align: center;
+        line-height: 1.5;
+        padding: 0.45rem 1.2rem;
+        border-radius: 100px;
+        transition:
+          all 0.55s cubic-bezier(0.25, 0.1, 0.25, 1),
+          background 0.4s var(--ease-smooth);
+        opacity: 0.28;
+        transform: scale(0.92);
+        filter: blur(1.2px);
+        cursor: default;
+        width: min(92%, 30ch);
+        max-width: 92%;
+        white-space: normal;
+        word-break: break-word;
+        overflow-wrap: anywhere;
+        background: transparent;
+      }
+
+      .lyrics-line.active {
+        font-weight: 700;
+        color: var(--text-primary);
+        opacity: 1;
+        transform: scale(1.05);
+        filter: blur(0);
+        background: rgba(var(--album-r), var(--album-g), var(--album-b), 0.1);
+        text-shadow:
+          0 0 24px rgba(var(--album-r), var(--album-g), var(--album-b), 0.5),
+          0 0 60px rgba(var(--album-r), var(--album-g), var(--album-b), 0.18);
+      }
+
+      .lyrics-line.past {
+        opacity: 0.28;
+        filter: blur(0.5px);
+        transform: scale(0.94);
+      }
+
+      .lyrics-line.near {
+        opacity: 0.55;
+        filter: blur(0);
+        transform: scale(0.97);
+      }
+
       .lyrics-content {
         display: flex;
         flex-direction: column;
         align-items: center;
-        gap: 0.75rem;
-        padding: 4rem 1rem;
+        gap: 0.65rem;
+        padding: 4rem 1.5rem;
         width: 100%;
-      }
-
-      .lyrics-line {
-        font-size: 1.75rem;
-        font-weight: 500;
-        color: var(--text-muted);
-        text-align: center;
-        line-height: 1.5;
-        padding: 0.5rem 0.5rem;
-        border-radius: 0.5rem;
-        transition: all 0.4s cubic-bezier(0.25, 0.1, 0.25, 1);
-        opacity: 0.4;
-        transform: scale(0.95);
-        filter: blur(0.5px);
-        cursor: default;
-        max-width: 100%;
-        word-wrap: break-word;
-        overflow-wrap: break-word;
-        hyphens: auto;
-      }
-
-      .lyrics-line.active {
-        font-weight: 600;
-        color: var(--text-primary);
-        opacity: 1;
-        transform: scale(1.08);
-        filter: blur(0);
-        text-shadow: 0 0 20px rgba(78, 205, 196, 0.4);
-      }
-
-      .lyrics-line.past {
-        opacity: 0.5;
-        filter: blur(0);
-      }
-
-      .lyrics-line.near {
-        opacity: 0.7;
-        filter: blur(0);
-        transform: scale(0.98);
       }
 
       /* Responsive lyrics */
       @media (max-width: 1400px) {
         .lyrics-line {
-          font-size: 1.6rem;
+          font-size: clamp(1.35rem, 1.95vw, 1.8rem);
+          width: min(94%, 32ch);
+          max-width: 94%;
         }
       }
 
       @media (max-width: 1100px) {
         .lyrics-line {
-          font-size: 1.5rem;
+          font-size: clamp(1.2rem, 1.75vw, 1.6rem);
+          width: min(96%, 34ch);
+          max-width: 96%;
         }
       }
 
@@ -873,7 +1165,7 @@
 
       #musicCard.fullscreen-mode .lyrics-container {
         opacity: 0;
-        transform: translateY(-18px) scale(0.98);
+        transform: translateY(-20px) scale(0.97);
         max-height: 0;
         flex: 0 0 0;
         pointer-events: none;
@@ -885,7 +1177,7 @@
         justify-content: center;
         gap: var(--gap-md);
         width: 100%;
-        max-width: 420px;
+        max-width: 480px;
       }
 
       #musicCard.fullscreen-mode .music-cover-wrapper {
@@ -894,35 +1186,46 @@
       }
 
       #musicCard.fullscreen-mode .music-cover {
-        width: clamp(140px, 18vw, 200px);
-        height: clamp(140px, 18vw, 200px);
+        width: clamp(190px, 27vw, 340px);
+        height: clamp(190px, 27vw, 340px);
         border-radius: var(--radius-lg);
+        box-shadow:
+          0 32px 80px rgba(0, 0, 0, 0.7),
+          0 0 100px rgba(var(--album-r), var(--album-g), var(--album-b), 0.5);
+      }
+
+      /* Reflet de la pochette en fullscreen */
+      #musicCard.fullscreen-mode .music-cover-wrapper::after {
+        bottom: -20px;
+        height: 32px;
+        filter: blur(20px);
+        background: rgba(var(--album-r), var(--album-g), var(--album-b), 0.55);
       }
 
       #musicCard.fullscreen-mode .music-info {
         align-items: center;
         text-align: center;
         width: 100%;
+        gap: 0.5rem;
       }
 
       #musicCard.fullscreen-mode .music-track {
-        font-size: clamp(1.25rem, 1.8vw, 1.75rem);
+        font-size: clamp(1.9rem, 3.2vw, 3rem);
         white-space: normal;
         text-align: center;
-        line-height: 1.3;
-        max-height: 3.9rem;
+        line-height: 1.25;
         overflow: hidden;
         display: -webkit-box;
         -webkit-line-clamp: 2;
         -webkit-box-orient: vertical;
+        letter-spacing: -0.03em;
       }
 
       #musicCard.fullscreen-mode .music-artist {
-        font-size: clamp(0.9rem, 1.2vw, 1.1rem);
+        font-size: clamp(1.2rem, 1.9vw, 1.7rem);
         white-space: normal;
         text-align: center;
-        line-height: 1.35;
-        max-height: 2.7rem;
+        line-height: 1.3;
         overflow: hidden;
         display: -webkit-box;
         -webkit-line-clamp: 2;
@@ -935,7 +1238,7 @@
       }
 
       #musicCard.fullscreen-mode .music-progress {
-        max-width: 400px;
+        max-width: 440px;
       }
 
       /* ========== UTILITY ========== */
@@ -962,25 +1265,30 @@
     </style>
   </head>
   <body>
+    <div class="album-color-wash" id="albumColorWash"></div>
+    <div class="bg-orb bg-orb-1" id="bgOrb1" aria-hidden="true"></div>
+    <div class="bg-orb bg-orb-2" id="bgOrb2" aria-hidden="true"></div>
+    <div class="bg-orb bg-orb-3" id="bgOrb3" aria-hidden="true"></div>
     <div class="dashboard">
       <!-- TIME CARD -->
-      <div id="timeCard" class="card hidden">
+      <div id="timeCard" class="card hidden" style="animation-delay:0ms">
         <div class="time-display" id="time">00:00:00</div>
+        <div class="time-separator"></div>
+        <div class="date-display" id="date"></div>
       </div>
 
       <!-- WEATHER CARD -->
-      <div id="weatherCard" class="card hidden">
+      <div id="weatherCard" class="card hidden" style="animation-delay:80ms">
         <div class="weather-content">
           <img id="weatherIcon" src="" alt="weather" class="weather-icon" />
-          <div>
-            <div class="weather-text" id="weather">Chargement...</div>
-            <div class="weather-temp" id="weatherTemp"></div>
-          </div>
+          <div class="weather-temp" id="weatherTemp"></div>
+          <div class="weather-condition" id="weatherCondition">Chargement...</div>
+          <div class="weather-location" id="weatherLocation"></div>
         </div>
       </div>
 
-      <!-- FORECAST CARD (HERO) -->
-      <div id="forecastCard" class="card hidden">
+      <!-- FORECAST CARD -->
+      <div id="forecastCard" class="card hidden" style="animation-delay:160ms">
         <div class="forecast-header">Prévisions</div>
         <div class="forecast-grid" id="forecast"></div>
       </div>
@@ -1043,7 +1351,9 @@
 
       // ========== DOM ELEMENTS ==========
       const timeEl = document.getElementById("time");
-      const weatherEl = document.getElementById("weather");
+      const dateEl = document.getElementById("date");
+      const weatherConditionEl = document.getElementById("weatherCondition");
+      const weatherLocationEl = document.getElementById("weatherLocation");
       const weatherTempEl = document.getElementById("weatherTemp");
       const weatherIconEl = document.getElementById("weatherIcon");
       const timeCard = document.getElementById("timeCard");
@@ -1057,6 +1367,7 @@
       const progressBar = document.getElementById("progressBar");
       const musicDurationEl = document.getElementById("musicDuration");
       const musicBottomEl = musicCard.querySelector(".music-bottom");
+      const albumColorWash = document.getElementById("albumColorWash");
       const DEFAULT_MUSIC_CARD_BACKGROUND = "";
       const PLACEHOLDER_COVER =
         "data:image/svg+xml;utf8," +
@@ -1112,9 +1423,17 @@
         function updateClock() {
           if (!config.showTime) return;
           const now = new Date();
-          const opts = { hour: "2-digit", minute: "2-digit" };
-          if (config.showSeconds) opts.second = "2-digit";
-          timeEl.textContent = now.toLocaleTimeString([], opts);
+          const timeOpts = { hour: "2-digit", minute: "2-digit" };
+          if (config.showSeconds) timeOpts.second = "2-digit";
+          timeEl.textContent = now.toLocaleTimeString("fr-FR", timeOpts);
+
+          if (dateEl) {
+            dateEl.textContent = now.toLocaleDateString("fr-FR", {
+              weekday: "long",
+              day: "numeric",
+              month: "long",
+            });
+          }
         }
         updateClock();
         setInterval(updateClock, 1000);
@@ -1126,12 +1445,13 @@
         fetch("/api/weather")
           .then((res) => res.json())
           .then((data) => {
-            weatherEl.textContent = `${data.name} · ${data.desc}`;
             weatherTempEl.textContent = `${data.temp}°C`;
+            weatherConditionEl.textContent = data.desc || "";
+            weatherLocationEl.textContent = data.name || "";
             weatherIconEl.src = `/weather-icons/${data.icon}.svg`;
           })
           .catch(() => {
-            weatherEl.textContent = "Erreur météo";
+            weatherConditionEl.textContent = "Erreur météo";
           });
       }
 
@@ -1540,8 +1860,191 @@
       let musicDuration = 0;
       let currentSongKey = "";
 
+      // ========== COLOR INTELLIGENCE ==========
+
+      function rgbToHsl(r, g, b) {
+        r /= 255; g /= 255; b /= 255;
+        const max = Math.max(r, g, b), min = Math.min(r, g, b);
+        const l = (max + min) / 2;
+        if (max === min) return [0, 0, l * 100];
+        const d = max - min;
+        const s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+        let h;
+        switch (max) {
+          case r: h = ((g - b) / d + (g < b ? 6 : 0)) / 6; break;
+          case g: h = ((b - r) / d + 2) / 6; break;
+          default: h = ((r - g) / d + 4) / 6;
+        }
+        return [h * 360, s * 100, l * 100];
+      }
+
+      function hslToRgb(h, s, l) {
+        h /= 360; s /= 100; l /= 100;
+        if (s === 0) { const v = Math.round(l * 255); return [v, v, v]; }
+        const hue2rgb = (p, q, t) => {
+          if (t < 0) t += 1;
+          if (t > 1) t -= 1;
+          if (t < 1/6) return p + (q - p) * 6 * t;
+          if (t < 1/2) return q;
+          if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+          return p;
+        };
+        const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+        const p = 2 * l - q;
+        return [
+          Math.round(hue2rgb(p, q, h + 1/3) * 255),
+          Math.round(hue2rgb(p, q, h) * 255),
+          Math.round(hue2rgb(p, q, h - 1/3) * 255),
+        ];
+      }
+
+      /**
+       * Parmi une palette, choisit la couleur la plus vibrante
+       * (saturée, ni trop sombre ni trop claire).
+       * Retourne la couleur boostée pour être bien visible.
+       */
+      function pickVibrantColor(palette) {
+        let best = null;
+        let bestScore = -1;
+
+        for (const [r, g, b] of palette) {
+          const [h, s, l] = rgbToHsl(r, g, b);
+          // Exclure les quasi-noirs, quasi-blancs et gris
+          if (l < 10 || l > 88 || s < 12) continue;
+          // Score : saturation élevée + luminosité idéale (30-65%)
+          const lScore = 1 - Math.abs(l - 48) / 48;
+          const score = s * 0.65 + lScore * 35;
+          if (score > bestScore) { bestScore = score; best = [r, g, b]; }
+        }
+
+        // Fallback : prendre la moins grise si tout est terne
+        if (!best) {
+          best = palette.reduce((a, c) => {
+            const [,sa] = rgbToHsl(...a);
+            const [,sc] = rgbToHsl(...c);
+            return sc > sa ? c : a;
+          });
+        }
+
+        // Booster : amener la saturation à 75% min, luminosité entre 45-60%
+        let [h, s, l] = rgbToHsl(...best);
+        s = Math.max(s, 75);
+        l = Math.max(Math.min(l, 62), 42);
+        return hslToRgb(h, s, l);
+      }
+
+      /**
+       * Choisit une 2e couleur d'accent à teinte différente.
+       */
+      function pickAccentColor(palette, primaryHue) {
+        let best = null;
+        let bestScore = -1;
+
+        for (const [r, g, b] of palette) {
+          const [h, s, l] = rgbToHsl(r, g, b);
+          if (l < 10 || l > 88 || s < 12) continue;
+          // Doit être suffisamment éloignée de la couleur primaire (>40° de diff)
+          const hueDiff = Math.min(Math.abs(h - primaryHue), 360 - Math.abs(h - primaryHue));
+          if (hueDiff < 40) continue;
+          const score = s * 0.6 + hueDiff * 0.1;
+          if (score > bestScore) { bestScore = score; best = [r, g, b]; }
+        }
+
+        if (!best) return null;
+        let [h, s, l] = rgbToHsl(...best);
+        s = Math.max(s, 65);
+        l = Math.max(Math.min(l, 60), 40);
+        return hslToRgb(h, s, l);
+      }
+
+      function applyAlbumColors(img) {
+        const colorThief = new ColorThief();
+        const palette = colorThief.getPalette(img, 8, 1);
+
+        const [pr, pg, pb] = pickVibrantColor(palette);
+        const [ph] = rgbToHsl(pr, pg, pb);
+
+        const accent = pickAccentColor(palette, ph);
+        const [ar, ag, ab] = accent ?? [pr, pg, pb];
+
+        // Propager couleur primaire et accent via CSS vars
+        const root = document.documentElement;
+        root.style.setProperty("--album-r",  pr);
+        root.style.setProperty("--album-g",  pg);
+        root.style.setProperty("--album-b",  pb);
+        root.style.setProperty("--album-ar", ar);
+        root.style.setProperty("--album-ag", ag);
+        root.style.setProperty("--album-ab", ab);
+
+        // Carte musique
+        musicCard.style.background = `
+          linear-gradient(145deg,
+            rgba(${pr}, ${pg}, ${pb}, 0.22) 0%,
+            rgba(${ar}, ${ag}, ${ab}, 0.12) 60%,
+            rgba(${pr}, ${pg}, ${pb}, 0.08) 100%
+          )
+        `;
+        musicCard.style.borderColor = `rgba(${pr}, ${pg}, ${pb}, 0.35)`;
+        musicCard.style.boxShadow = `
+          0 4px 20px rgba(0,0,0,0.3),
+          0 0 60px rgba(${pr}, ${pg}, ${pb}, 0.15),
+          inset 0 1px 0 rgba(${pr}, ${pg}, ${pb}, 0.12)
+        `;
+
+        // Glow de la pochette
+        coverEl.style.boxShadow = `
+          0 8px 40px rgba(0,0,0,0.4),
+          0 0 60px rgba(${pr}, ${pg}, ${pb}, 0.5)
+        `;
+
+        // Fond du body : dégradé ancré sur la zone musique (bas-droite)
+        document.body.style.background = `
+          radial-gradient(
+            ellipse 80% 70% at 80% 85%,
+            rgba(${pr}, ${pg}, ${pb}, 0.28) 0%,
+            rgba(${ar}, ${ag}, ${ab}, 0.12) 45%,
+            #0a0e14 75%
+          )
+        `;
+
+        // Overlay screen-blend : fait briller les couleurs sur le fond sombre
+        albumColorWash.style.background = `
+          radial-gradient(
+            ellipse 140% 120% at 78% 88%,
+            rgba(${pr}, ${pg}, ${pb}, 0.6) 0%,
+            rgba(${pr}, ${pg}, ${pb}, 0.28) 35%,
+            rgba(${ar}, ${ag}, ${ab}, 0.08) 65%,
+            transparent 88%
+          ),
+          radial-gradient(
+            ellipse 80% 60% at 12% 15%,
+            rgba(${ar}, ${ag}, ${ab}, 0.3) 0%,
+            rgba(${ar}, ${ag}, ${ab}, 0.08) 50%,
+            transparent 80%
+          )
+        `;
+        albumColorWash.classList.add("active");
+
+        // Activer les orbes animés
+        document.querySelectorAll(".bg-orb").forEach(o => o.classList.add("active"));
+      }
+
       function resetMusicCardBackground() {
         musicCard.style.background = DEFAULT_MUSIC_CARD_BACKGROUND;
+        musicCard.style.borderColor = "";
+        musicCard.style.boxShadow = "";
+        coverEl.style.boxShadow = "";
+        albumColorWash.classList.remove("active");
+        document.body.style.background = "";
+        document.querySelectorAll(".bg-orb").forEach(o => o.classList.remove("active"));
+        // Réinitialiser les CSS vars aux valeurs par défaut
+        const root = document.documentElement;
+        root.style.setProperty("--album-r",  "78");
+        root.style.setProperty("--album-g",  "205");
+        root.style.setProperty("--album-b",  "196");
+        root.style.setProperty("--album-ar", "167");
+        root.style.setProperty("--album-ag", "139");
+        root.style.setProperty("--album-ab", "250");
       }
 
       function setCoverWithFallback(coverUrl) {
@@ -1573,16 +2076,18 @@
           return;
         }
 
-        const animTargets = [
-          coverEl,
-          trackEl,
-          artistEl,
-          musicBottomEl,
-          lyricsContainer,
-        ].filter(Boolean);
+        // Staggered targets: each element animates with a slight delay
+        const staggerTargets = [
+          { el: lyricsContainer, delayOut: 0, delayIn: 60 },
+          { el: coverEl, delayOut: 30, delayIn: 0 },
+          { el: trackEl, delayOut: 50, delayIn: 30 },
+          { el: artistEl, delayOut: 65, delayIn: 50 },
+          { el: musicBottomEl.querySelector(".music-progress-row"), delayOut: 80, delayIn: 70 },
+        ].filter((t) => t.el);
 
-        const outAnims = animTargets.map((el) =>
-          el.animate(
+        // OUT: staggered fade with slight upward drift
+        const outAnims = staggerTargets.map((t) =>
+          t.el.animate(
             [
               {
                 opacity: 1,
@@ -1590,13 +2095,14 @@
                 filter: "blur(0)",
               },
               {
-                opacity: 0.18,
-                transform: "translateY(10px) scale(0.985)",
-                filter: "blur(2px)",
+                opacity: 0,
+                transform: "translateY(8px) scale(0.98)",
+                filter: "blur(4px)",
               },
             ],
             {
-              duration: 180,
+              duration: 220,
+              delay: t.delayOut,
               easing: "cubic-bezier(0.4, 0, 0.2, 1)",
               fill: "forwards",
             },
@@ -1607,13 +2113,17 @@
 
         applyUpdate();
 
-        const inAnims = animTargets.map((el) =>
-          el.animate(
+        // Small pause for visual breathing room
+        await new Promise((r) => setTimeout(r, 60));
+
+        // IN: staggered entrance from below with spring easing
+        const inAnims = staggerTargets.map((t) =>
+          t.el.animate(
             [
               {
-                opacity: 0.18,
-                transform: "translateY(-10px) scale(0.985)",
-                filter: "blur(2px)",
+                opacity: 0,
+                transform: "translateY(-12px) scale(0.97)",
+                filter: "blur(4px)",
               },
               {
                 opacity: 1,
@@ -1622,7 +2132,8 @@
               },
             ],
             {
-              duration: 340,
+              duration: 420,
+              delay: t.delayIn,
               easing: "cubic-bezier(0.22, 1, 0.36, 1)",
               fill: "both",
             },
@@ -1694,7 +2205,7 @@
           },
         );
 
-        // Extract dominant color from cover
+        // Extract and apply album colors
         if (data.cover) {
           const img = new Image();
           img.crossOrigin = "Anonymous";
@@ -1702,25 +2213,13 @@
 
           img.onload = () => {
             try {
-              const colorThief = new ColorThief();
-              const [r, g, b] = colorThief.getColor(img);
-              const luminance = 0.299 * r + 0.587 * g + 0.114 * b;
-
-              // Apply dynamic gradient
-              musicCard.style.background = `
-                linear-gradient(135deg, 
-                  rgba(${r}, ${g}, ${b}, 0.3) 0%, 
-                  rgba(${r * 0.7}, ${g * 0.7}, ${b * 0.7}, 0.2) 100%
-                )
-              `;
+              applyAlbumColors(img);
             } catch (e) {
               console.error("Color extraction failed:", e);
               resetMusicCardBackground();
             }
           };
-          img.onerror = () => {
-            resetMusicCardBackground();
-          };
+          img.onerror = () => resetMusicCardBackground();
         } else {
           resetMusicCardBackground();
         }
@@ -1742,12 +2241,52 @@
       });
 
       function hideMusicCard() {
-        musicCard.classList.add("hidden");
+        // Graceful fade-out before hiding
+        const prefersReducedMotion =
+          window.matchMedia &&
+          window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
         if (progressInterval) clearInterval(progressInterval);
-        progressBar.style.width = "0%";
-        if (musicDurationEl) musicDurationEl.textContent = "0:00";
         stopLyricsSync();
-        updateForecastLayout();
+        albumColorWash.classList.remove("active");
+        // Fade out the ambient album tint when the track ends.
+        document.body.style.background = "";
+        document
+          .querySelectorAll(".bg-orb")
+          .forEach((orb) => orb.classList.remove("active"));
+
+        if (prefersReducedMotion || musicCard.classList.contains("hidden")) {
+          musicCard.classList.add("hidden");
+          progressBar.style.width = "0%";
+          if (musicDurationEl) musicDurationEl.textContent = "0:00";
+          updateForecastLayout();
+          return;
+        }
+
+        const fadeOut = musicCard.animate(
+          [
+            { opacity: 1, transform: "scale(1)", filter: "blur(0)" },
+            { opacity: 0, transform: "scale(0.96)", filter: "blur(6px)" },
+          ],
+          {
+            duration: 500,
+            easing: "cubic-bezier(0.4, 0, 0.2, 1)",
+            fill: "forwards",
+          },
+        );
+
+        fadeOut.finished
+          .then(() => {
+            musicCard.classList.add("hidden");
+            fadeOut.cancel();
+            progressBar.style.width = "0%";
+            if (musicDurationEl) musicDurationEl.textContent = "0:00";
+            updateForecastLayout();
+          })
+          .catch(() => {
+            musicCard.classList.add("hidden");
+            updateForecastLayout();
+          });
       }
 
       function formatTime(seconds) {
