@@ -21,7 +21,11 @@
         /* Accents statiques */
         --accent-primary: #4ecdc4;
         --accent-secondary: #a78bfa;
-        --accent-gradient: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+        --accent-gradient: linear-gradient(
+          135deg,
+          var(--accent-primary),
+          var(--accent-secondary)
+        );
 
         /* Couleur album dynamique — primaire et accent */
         --album-r: 78;
@@ -40,7 +44,8 @@
         --shadow-sm: 0 2px 10px rgba(0, 0, 0, 0.35);
         --shadow-md: 0 6px 28px rgba(0, 0, 0, 0.45);
         --shadow-lg: 0 16px 56px rgba(0, 0, 0, 0.6);
-        --shadow-glow: 0 0 50px rgba(var(--album-r), var(--album-g), var(--album-b), 0.22);
+        --shadow-glow: 0 0 50px
+          rgba(var(--album-r), var(--album-g), var(--album-b), 0.22);
 
         /* Spacing */
         --gap-sm: 0.75rem;
@@ -68,8 +73,14 @@
       body {
         background: var(--bg-primary);
         color: var(--text-primary);
-        font-family: "Inter", -apple-system, system-ui, sans-serif;
-        font-feature-settings: "cv11" 1, "ss01" 1;
+        font-family:
+          "Inter",
+          -apple-system,
+          system-ui,
+          sans-serif;
+        font-feature-settings:
+          "cv11" 1,
+          "ss01" 1;
         -webkit-font-smoothing: antialiased;
         -moz-osx-font-smoothing: grayscale;
         text-rendering: optimizeLegibility;
@@ -87,15 +98,21 @@
         inset: -30%;
         z-index: -1;
         background:
-          radial-gradient(ellipse 55% 45% at 18% 22%,
+          radial-gradient(
+            ellipse 55% 45% at 18% 22%,
             rgba(var(--album-r), var(--album-g), var(--album-b), 0.07) 0%,
-            transparent 70%),
-          radial-gradient(ellipse 60% 50% at 82% 75%,
+            transparent 70%
+          ),
+          radial-gradient(
+            ellipse 60% 50% at 82% 75%,
             rgba(167, 139, 250, 0.06) 0%,
-            transparent 70%),
-          radial-gradient(ellipse 40% 35% at 50% 50%,
+            transparent 70%
+          ),
+          radial-gradient(
+            ellipse 40% 35% at 50% 50%,
             rgba(var(--album-r), var(--album-g), var(--album-b), 0.03) 0%,
-            transparent 60%);
+            transparent 60%
+          );
         animation: ambient 28s ease-in-out infinite alternate;
         pointer-events: none;
         transition: background 2.2s cubic-bezier(0.25, 0.1, 0.25, 1);
@@ -130,10 +147,18 @@
       }
 
       @keyframes washDrift {
-        0%   { transform: translate(0, 0) scale(1) rotate(0deg); }
-        30%  { transform: translate(-2.5%, -2%) scale(1.04) rotate(0.5deg); }
-        60%  { transform: translate(1.5%, -3.5%) scale(0.97) rotate(-0.3deg); }
-        100% { transform: translate(-1%, 2%) scale(1.03) rotate(0.2deg); }
+        0% {
+          transform: translate(0, 0) scale(1) rotate(0deg);
+        }
+        30% {
+          transform: translate(-2.5%, -2%) scale(1.04) rotate(0.5deg);
+        }
+        60% {
+          transform: translate(1.5%, -3.5%) scale(0.97) rotate(-0.3deg);
+        }
+        100% {
+          transform: translate(-1%, 2%) scale(1.03) rotate(0.2deg);
+        }
       }
 
       /* ========== ANIMATED BACKGROUND ORBS ========== */
@@ -150,7 +175,9 @@
         z-index: 0;
       }
 
-      .bg-orb.active { opacity: 1; }
+      .bg-orb.active {
+        opacity: 1;
+      }
 
       /* Grand orbe primaire — bas-droite, là où est la musique */
       .bg-orb-1 {
@@ -201,32 +228,66 @@
       }
 
       @keyframes orbDrift1 {
-        0%   { transform: translate(0,    0)    scale(1)    rotate(0deg); }
-        20%  { transform: translate(-5vw, -3vh) scale(1.06) rotate(1deg); }
-        45%  { transform: translate(-2vw, -8vh) scale(0.95) rotate(-1.5deg); }
-        70%  { transform: translate(-7vw, -2vh) scale(1.08) rotate(2deg); }
-        100% { transform: translate(-3vw, -6vh) scale(1.03) rotate(-0.5deg); }
+        0% {
+          transform: translate(0, 0) scale(1) rotate(0deg);
+        }
+        20% {
+          transform: translate(-5vw, -3vh) scale(1.06) rotate(1deg);
+        }
+        45% {
+          transform: translate(-2vw, -8vh) scale(0.95) rotate(-1.5deg);
+        }
+        70% {
+          transform: translate(-7vw, -2vh) scale(1.08) rotate(2deg);
+        }
+        100% {
+          transform: translate(-3vw, -6vh) scale(1.03) rotate(-0.5deg);
+        }
       }
 
       @keyframes orbDrift2 {
-        0%   { transform: translate(0,   0)   scale(1);    }
-        30%  { transform: translate(6vw, 5vh) scale(1.1);  }
-        60%  { transform: translate(3vw, 9vh) scale(0.93); }
-        100% { transform: translate(8vw, 3vh) scale(1.07); }
+        0% {
+          transform: translate(0, 0) scale(1);
+        }
+        30% {
+          transform: translate(6vw, 5vh) scale(1.1);
+        }
+        60% {
+          transform: translate(3vw, 9vh) scale(0.93);
+        }
+        100% {
+          transform: translate(8vw, 3vh) scale(1.07);
+        }
       }
 
       @keyframes orbDrift3 {
-        0%   { transform: translate(0,    0)    scale(1)    rotate(0deg);  }
-        35%  { transform: translate(-4vw, 5vh)  scale(1.14) rotate(5deg);  }
-        65%  { transform: translate(5vw,  -3vh) scale(0.89) rotate(-4deg); }
-        100% { transform: translate(-2vw, -5vh) scale(1.06) rotate(2deg);  }
+        0% {
+          transform: translate(0, 0) scale(1) rotate(0deg);
+        }
+        35% {
+          transform: translate(-4vw, 5vh) scale(1.14) rotate(5deg);
+        }
+        65% {
+          transform: translate(5vw, -3vh) scale(0.89) rotate(-4deg);
+        }
+        100% {
+          transform: translate(-2vw, -5vh) scale(1.06) rotate(2deg);
+        }
       }
 
       @keyframes ambient {
-        0%   { transform: translate(0, 0) scale(1) rotate(0deg); }
-        33%  { transform: translate(3%, 2%) scale(1.04) rotate(2deg); }
-        66%  { transform: translate(-2%, 4%) scale(0.97) rotate(-1deg); }
-        100% { transform: translate(4%, -2%) scale(1.02) rotate(3deg); }
+        0% {
+          transform: translate(0, 0) scale(1) rotate(0deg);
+        }
+        33% {
+          transform: translate(3%, 2%) scale(1.04) rotate(2deg);
+        }
+        66% {
+          transform: translate(-2%, 4%) scale(0.97) rotate(-1deg);
+        }
+        100% {
+          transform: translate(4%, -2%) scale(1.02) rotate(3deg);
+        }
       }
 
       /* ========== LAYOUT GRID ========== */
@@ -300,7 +361,10 @@
         pointer-events: none;
       }
 
-      .card > * { position: relative; z-index: 1; }
+      .card > * {
+        position: relative;
+        z-index: 1;
+      }
 
       .card:not(.hidden) {
         animation: cardEnter var(--duration-slow) var(--ease-spring) forwards;
@@ -312,8 +376,18 @@
       }
 
       @keyframes breathe {
-        0%, 100% { box-shadow: var(--shadow-md), 0 1px 0 rgba(255,255,255,0.05) inset; }
-        50%       { box-shadow: var(--shadow-md), var(--shadow-glow), 0 1px 0 rgba(255,255,255,0.07) inset; }
+        0%,
+        100% {
+          box-shadow:
+            var(--shadow-md),
+            0 1px 0 rgba(255, 255, 255, 0.05) inset;
+        }
+        50% {
+          box-shadow:
+            var(--shadow-md),
+            var(--shadow-glow),
+            0 1px 0 rgba(255, 255, 255, 0.07) inset;
+        }
       }
 
       .card:not(.hidden):not(#musicCard) {
@@ -323,13 +397,28 @@
       }
 
       @keyframes cardEnter {
-        0%   { opacity: 0; transform: scale(0.96) translateY(14px); filter: blur(8px); }
-        55%  { opacity: 0.9; filter: blur(1px); }
-        100% { opacity: 1; transform: scale(1) translateY(0); filter: blur(0); }
+        0% {
+          opacity: 0;
+          transform: scale(0.96) translateY(14px);
+          filter: blur(8px);
+        }
+        55% {
+          opacity: 0.9;
+          filter: blur(1px);
+        }
+        100% {
+          opacity: 1;
+          transform: scale(1) translateY(0);
+          filter: blur(0);
+        }
       }
 
       @keyframes cardExit {
-        to { opacity: 0; transform: scale(0.97) translateY(-10px); filter: blur(8px); }
+        to {
+          opacity: 0;
+          transform: scale(0.97) translateY(-10px);
+          filter: blur(8px);
+        }
       }
 
       /* ========== TIME CARD ========== */
@@ -361,7 +450,9 @@
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         background-clip: text;
-        filter: drop-shadow(0 0 28px rgba(var(--album-r), var(--album-g), var(--album-b), 0.25));
+        filter: drop-shadow(
+          0 0 28px rgba(var(--album-r), var(--album-g), var(--album-b), 0.25)
+        );
         transition: filter 2s var(--ease-smooth);
         animation: timeGlow 10s ease-in-out infinite;
       }
@@ -389,8 +480,17 @@
       }
 
       @keyframes timeGlow {
-        0%, 100% { filter: drop-shadow(0 0 20px rgba(var(--album-r), var(--album-g), var(--album-b), 0.2)); }
-        50%       { filter: drop-shadow(0 0 40px rgba(var(--album-r), var(--album-g), var(--album-b), 0.4)); }
+        0%,
+        100% {
+          filter: drop-shadow(
+            0 0 20px rgba(var(--album-r), var(--album-g), var(--album-b), 0.2)
+          );
+        }
+        50% {
+          filter: drop-shadow(
+            0 0 40px rgba(var(--album-r), var(--album-g), var(--album-b), 0.4)
+          );
+        }
       }
 
       /* ========== WEATHER CARD ========== */
@@ -416,7 +516,9 @@
       .weather-icon {
         width: clamp(100px, 14vw, 155px);
         height: clamp(100px, 14vw, 155px);
-        filter: drop-shadow(0 10px 32px rgba(var(--album-r), var(--album-g), var(--album-b), 0.4));
+        filter: drop-shadow(
+          0 10px 32px rgba(var(--album-r), var(--album-g), var(--album-b), 0.4)
+        );
         animation: weatherFloat 14s ease-in-out infinite;
         flex-shrink: 0;
         margin-bottom: 0.25rem;
@@ -424,10 +526,18 @@
       }
 
       @keyframes weatherFloat {
-        0%   { transform: translateY(0px) rotate(-0.5deg); }
-        30%  { transform: translateY(-8px) rotate(0.8deg); }
-        60%  { transform: translateY(-14px) rotate(-0.3deg); }
-        100% { transform: translateY(0px) rotate(-0.5deg); }
+        0% {
+          transform: translateY(0px) rotate(-0.5deg);
+        }
+        30% {
+          transform: translateY(-8px) rotate(0.8deg);
+        }
+        60% {
+          transform: translateY(-14px) rotate(-0.3deg);
+        }
+        100% {
+          transform: translateY(0px) rotate(-0.5deg);
+        }
       }
 
       .weather-temp {
@@ -470,13 +580,16 @@
         display: flex;
         flex-direction: column;
         background: var(--bg-card-strong);
-        border: 1px solid rgba(var(--album-r), var(--album-g), var(--album-b), 0.1);
+        border: 1px solid
+          rgba(var(--album-r), var(--album-g), var(--album-b), 0.1);
         transition:
           grid-row var(--duration-normal) var(--ease-smooth),
           border-color 2.2s var(--ease-smooth);
       }
 
-      #forecastCard.expanded { grid-row: 1 / 11; }
+      #forecastCard.expanded {
+        grid-row: 1 / 11;
+      }
 
       .forecast-header {
         font-size: 0.72rem;
@@ -498,15 +611,27 @@
         height: 6px;
         border-radius: 50%;
         background: rgba(var(--album-r), var(--album-g), var(--album-b), 1);
-        box-shadow: 0 0 0 0 rgba(var(--album-r), var(--album-g), var(--album-b), 0.6);
+        box-shadow: 0 0 0 0
+          rgba(var(--album-r), var(--album-g), var(--album-b), 0.6);
         animation: livePulse 2.5s ease-out infinite;
-        transition: background 2.2s var(--ease-smooth), box-shadow 2.2s var(--ease-smooth);
+        transition:
+          background 2.2s var(--ease-smooth),
+          box-shadow 2.2s var(--ease-smooth);
       }
 
       @keyframes livePulse {
-        0%   { box-shadow: 0 0 0 0 rgba(var(--album-r), var(--album-g), var(--album-b), 0.6); }
-        60%  { box-shadow: 0 0 0 7px rgba(var(--album-r), var(--album-g), var(--album-b), 0); }
-        100% { box-shadow: 0 0 0 0 rgba(var(--album-r), var(--album-g), var(--album-b), 0); }
+        0% {
+          box-shadow: 0 0 0 0
+            rgba(var(--album-r), var(--album-g), var(--album-b), 0.6);
+        }
+        60% {
+          box-shadow: 0 0 0 7px
+            rgba(var(--album-r), var(--album-g), var(--album-b), 0);
+        }
+        100% {
+          box-shadow: 0 0 0 0
+            rgba(var(--album-r), var(--album-g), var(--album-b), 0);
+        }
       }
 
       .forecast-grid {
@@ -518,7 +643,9 @@
         height: 100%;
       }
 
-      #forecastCard.expanded .forecast-grid { gap: var(--gap-md); }
+      #forecastCard.expanded .forecast-grid {
+        gap: var(--gap-md);
+      }
 
       .forecast-item {
         background: linear-gradient(
@@ -544,7 +671,9 @@
       .forecast-item::after {
         content: "";
         position: absolute;
-        top: 0; left: 15%; right: 15%;
+        top: 0;
+        left: 15%;
+        right: 15%;
         height: 2px;
         background: linear-gradient(
           90deg,
@@ -566,7 +695,12 @@
           rgba(var(--album-r), var(--album-g), var(--album-b), 0.08) 0%,
           rgba(255, 255, 255, 0.02) 100%
         );
-        border-color: rgba(var(--album-r), var(--album-g), var(--album-b), 0.18);
+        border-color: rgba(
+          var(--album-r),
+          var(--album-g),
+          var(--album-b),
+          0.18
+        );
         transform: translateY(-4px);
         box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
       }
@@ -589,11 +723,16 @@
       .forecast-icon {
         width: 52px;
         height: 52px;
-        filter: drop-shadow(0 4px 12px rgba(var(--album-r), var(--album-g), var(--album-b), 0.2));
+        filter: drop-shadow(
+          0 4px 12px rgba(var(--album-r), var(--album-g), var(--album-b), 0.2)
+        );
         transition: all var(--duration-normal) var(--ease-smooth);
       }
 
-      #forecastCard.expanded .forecast-icon { width: 76px; height: 76px; }
+      #forecastCard.expanded .forecast-icon {
+        width: 76px;
+        height: 76px;
+      }
 
       .forecast-temp {
         font-size: 1.65rem;
@@ -604,7 +743,9 @@
         transition: font-size var(--duration-normal) var(--ease-smooth);
       }
 
-      #forecastCard.expanded .forecast-temp { font-size: 2.3rem; }
+      #forecastCard.expanded .forecast-temp {
+        font-size: 2.3rem;
+      }
 
       .forecast-desc {
         font-size: 0.75rem;
@@ -630,7 +771,8 @@
           rgba(var(--album-r), var(--album-g), var(--album-b), 0.04) 60%,
           rgba(0, 0, 0, 0.1) 100%
         );
-        border: 1px solid rgba(var(--album-r), var(--album-g), var(--album-b), 0.22);
+        border: 1px solid
+          rgba(var(--album-r), var(--album-g), var(--album-b), 0.22);
         transition:
           background 2s var(--ease-smooth),
           border-color 2s var(--ease-smooth),
@@ -651,7 +793,8 @@
         content: "";
         position: absolute;
         bottom: -16px;
-        left: 0; right: 0;
+        left: 0;
+        right: 0;
         height: 24px;
         background: rgba(var(--album-r), var(--album-g), var(--album-b), 0.45);
         filter: blur(16px);
@@ -675,8 +818,13 @@
       }
 
       @keyframes coverPulse {
-        0%, 100% { transform: scale(1); }
-        50%       { transform: scale(1.022); }
+        0%,
+        100% {
+          transform: scale(1);
+        }
+        50% {
+          transform: scale(1.022);
+        }
       }
 
       .music-info {
@@ -748,9 +896,12 @@
         height: 8px;
         border-radius: 50%;
         background: rgba(var(--album-r), var(--album-g), var(--album-b), 1);
-        box-shadow: 0 0 10px rgba(var(--album-r), var(--album-g), var(--album-b), 0.8);
+        box-shadow: 0 0 10px
+          rgba(var(--album-r), var(--album-g), var(--album-b), 0.8);
         opacity: 0;
-        transition: opacity 0.3s, background 2s var(--ease-smooth);
+        transition:
+          opacity 0.3s,
+          background 2s var(--ease-smooth);
       }
 
       .music-progress:hover .music-progress-bar::after {
@@ -1071,8 +1222,14 @@
       .lyrics-loading-spinner {
         width: 22px;
         height: 22px;
-        border: 2px solid rgba(var(--album-r), var(--album-g), var(--album-b), 0.15);
-        border-top-color: rgba(var(--album-r), var(--album-g), var(--album-b), 0.9);
+        border: 2px solid
+          rgba(var(--album-r), var(--album-g), var(--album-b), 0.15);
+        border-top-color: rgba(
+          var(--album-r),
+          var(--album-g),
+          var(--album-b),
+          0.9
+        );
         border-radius: 50%;
         animation: spin 1.4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
         transition: border-color 2s var(--ease-smooth);
@@ -1271,24 +1428,26 @@
     <div class="bg-orb bg-orb-3" id="bgOrb3" aria-hidden="true"></div>
     <div class="dashboard">
       <!-- TIME CARD -->
-      <div id="timeCard" class="card hidden" style="animation-delay:0ms">
+      <div id="timeCard" class="card hidden" style="animation-delay: 0ms">
         <div class="time-display" id="time">00:00:00</div>
         <div class="time-separator"></div>
         <div class="date-display" id="date"></div>
       </div>
 
       <!-- WEATHER CARD -->
-      <div id="weatherCard" class="card hidden" style="animation-delay:80ms">
+      <div id="weatherCard" class="card hidden" style="animation-delay: 80ms">
         <div class="weather-content">
           <img id="weatherIcon" src="" alt="weather" class="weather-icon" />
           <div class="weather-temp" id="weatherTemp"></div>
-          <div class="weather-condition" id="weatherCondition">Chargement...</div>
+          <div class="weather-condition" id="weatherCondition">
+            Chargement...
+          </div>
           <div class="weather-location" id="weatherLocation"></div>
         </div>
       </div>
 
       <!-- FORECAST CARD -->
-      <div id="forecastCard" class="card hidden" style="animation-delay:160ms">
+      <div id="forecastCard" class="card hidden" style="animation-delay: 160ms">
         <div class="forecast-header">Prévisions</div>
         <div class="forecast-grid" id="forecast"></div>
       </div>
@@ -1863,38 +2022,51 @@
       // ========== COLOR INTELLIGENCE ==========
 
       function rgbToHsl(r, g, b) {
-        r /= 255; g /= 255; b /= 255;
-        const max = Math.max(r, g, b), min = Math.min(r, g, b);
+        r /= 255;
+        g /= 255;
+        b /= 255;
+        const max = Math.max(r, g, b),
+          min = Math.min(r, g, b);
         const l = (max + min) / 2;
         if (max === min) return [0, 0, l * 100];
         const d = max - min;
         const s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
         let h;
         switch (max) {
-          case r: h = ((g - b) / d + (g < b ? 6 : 0)) / 6; break;
-          case g: h = ((b - r) / d + 2) / 6; break;
-          default: h = ((r - g) / d + 4) / 6;
+          case r:
+            h = ((g - b) / d + (g < b ? 6 : 0)) / 6;
+            break;
+          case g:
+            h = ((b - r) / d + 2) / 6;
+            break;
+          default:
+            h = ((r - g) / d + 4) / 6;
         }
         return [h * 360, s * 100, l * 100];
       }
 
       function hslToRgb(h, s, l) {
-        h /= 360; s /= 100; l /= 100;
-        if (s === 0) { const v = Math.round(l * 255); return [v, v, v]; }
+        h /= 360;
+        s /= 100;
+        l /= 100;
+        if (s === 0) {
+          const v = Math.round(l * 255);
+          return [v, v, v];
+        }
         const hue2rgb = (p, q, t) => {
           if (t < 0) t += 1;
           if (t > 1) t -= 1;
-          if (t < 1/6) return p + (q - p) * 6 * t;
-          if (t < 1/2) return q;
-          if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+          if (t < 1 / 6) return p + (q - p) * 6 * t;
+          if (t < 1 / 2) return q;
+          if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
           return p;
         };
         const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
         const p = 2 * l - q;
         return [
-          Math.round(hue2rgb(p, q, h + 1/3) * 255),
+          Math.round(hue2rgb(p, q, h + 1 / 3) * 255),
           Math.round(hue2rgb(p, q, h) * 255),
-          Math.round(hue2rgb(p, q, h - 1/3) * 255),
+          Math.round(hue2rgb(p, q, h - 1 / 3) * 255),
         ];
       }
 
@@ -1914,14 +2086,17 @@
           // Score : saturation élevée + luminosité idéale (30-65%)
           const lScore = 1 - Math.abs(l - 48) / 48;
           const score = s * 0.65 + lScore * 35;
-          if (score > bestScore) { bestScore = score; best = [r, g, b]; }
+          if (score > bestScore) {
+            bestScore = score;
+            best = [r, g, b];
+          }
         }
 
         // Fallback : prendre la moins grise si tout est terne
         if (!best) {
           best = palette.reduce((a, c) => {
-            const [,sa] = rgbToHsl(...a);
-            const [,sc] = rgbToHsl(...c);
+            const [, sa] = rgbToHsl(...a);
+            const [, sc] = rgbToHsl(...c);
             return sc > sa ? c : a;
           });
         }
@@ -1944,10 +2119,16 @@
           const [h, s, l] = rgbToHsl(r, g, b);
           if (l < 10 || l > 88 || s < 12) continue;
           // Doit être suffisamment éloignée de la couleur primaire (>40° de diff)
-          const hueDiff = Math.min(Math.abs(h - primaryHue), 360 - Math.abs(h - primaryHue));
+          const hueDiff = Math.min(
+            Math.abs(h - primaryHue),
+            360 - Math.abs(h - primaryHue),
+          );
           if (hueDiff < 40) continue;
           const score = s * 0.6 + hueDiff * 0.1;
-          if (score > bestScore) { bestScore = score; best = [r, g, b]; }
+          if (score > bestScore) {
+            bestScore = score;
+            best = [r, g, b];
+          }
         }
 
         if (!best) return null;
@@ -1969,9 +2150,9 @@
 
         // Propager couleur primaire et accent via CSS vars
         const root = document.documentElement;
-        root.style.setProperty("--album-r",  pr);
-        root.style.setProperty("--album-g",  pg);
-        root.style.setProperty("--album-b",  pb);
+        root.style.setProperty("--album-r", pr);
+        root.style.setProperty("--album-g", pg);
+        root.style.setProperty("--album-b", pb);
         root.style.setProperty("--album-ar", ar);
         root.style.setProperty("--album-ag", ag);
         root.style.setProperty("--album-ab", ab);
@@ -2026,7 +2207,9 @@
         albumColorWash.classList.add("active");
 
         // Activer les orbes animés
-        document.querySelectorAll(".bg-orb").forEach(o => o.classList.add("active"));
+        document
+          .querySelectorAll(".bg-orb")
+          .forEach((o) => o.classList.add("active"));
       }
 
       function resetMusicCardBackground() {
@@ -2036,12 +2219,14 @@
         coverEl.style.boxShadow = "";
         albumColorWash.classList.remove("active");
         document.body.style.background = "";
-        document.querySelectorAll(".bg-orb").forEach(o => o.classList.remove("active"));
+        document
+          .querySelectorAll(".bg-orb")
+          .forEach((o) => o.classList.remove("active"));
         // Réinitialiser les CSS vars aux valeurs par défaut
         const root = document.documentElement;
-        root.style.setProperty("--album-r",  "78");
-        root.style.setProperty("--album-g",  "205");
-        root.style.setProperty("--album-b",  "196");
+        root.style.setProperty("--album-r", "78");
+        root.style.setProperty("--album-g", "205");
+        root.style.setProperty("--album-b", "196");
         root.style.setProperty("--album-ar", "167");
         root.style.setProperty("--album-ag", "139");
         root.style.setProperty("--album-ab", "250");
@@ -2082,7 +2267,11 @@
           { el: coverEl, delayOut: 30, delayIn: 0 },
           { el: trackEl, delayOut: 50, delayIn: 30 },
           { el: artistEl, delayOut: 65, delayIn: 50 },
-          { el: musicBottomEl.querySelector(".music-progress-row"), delayOut: 80, delayIn: 70 },
+          {
+            el: musicBottomEl.querySelector(".music-progress-row"),
+            delayOut: 80,
+            delayIn: 70,
+          },
         ].filter((t) => t.el);
 
         // OUT: staggered fade with slight upward drift
