@@ -1412,17 +1412,31 @@
         }
 
         /* Supprimer le grain SVG (calcul CPU continu) */
-        body::after { display: none; }
+        body::after {
+          display: none;
+        }
 
         /* Orbes : blur réduit, orbe central supprimé */
-        .bg-orb-1 { filter: blur(50px); }
-        .bg-orb-2 { filter: blur(55px); }
-        .bg-orb-3 { display: none; }
+        .bg-orb-1 {
+          filter: blur(50px);
+        }
+        .bg-orb-2 {
+          filter: blur(55px);
+        }
+        .bg-orb-3 {
+          display: none;
+        }
 
         /* Animations moins agressives */
-        .album-color-wash.active { animation-duration: 24s; }
-        .bg-orb-1 { animation-duration: 32s; }
-        .bg-orb-2 { animation-duration: 26s; }
+        .album-color-wash.active {
+          animation-duration: 24s;
+        }
+        .bg-orb-1 {
+          animation-duration: 32s;
+        }
+        .bg-orb-2 {
+          animation-duration: 26s;
+        }
       }
 
       /* Tablette / petit écran : mode économique complet */
@@ -1433,23 +1447,45 @@
         }
 
         /* Supprimer tous les orbes */
-        .bg-orb { display: none; }
+        .bg-orb {
+          display: none;
+        }
 
         /* Supprimer le wash animé — garder juste le fond body */
-        .album-color-wash { display: none; }
+        .album-color-wash {
+          display: none;
+        }
 
         /* Réduire les ombres complexes */
-        .card { box-shadow: 0 4px 16px rgba(0,0,0,0.4); }
+        .card {
+          box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+        }
 
         /* Animations plus simples */
         @keyframes breathe {
-          0%, 100% { box-shadow: 0 4px 16px rgba(0,0,0,0.4); }
-          50%       { box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
+          0%,
+          100% {
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+          }
+          50% {
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+          }
         }
-        @keyframes coverPulse { 0%, 100%, 50% { transform: scale(1); } }
+        @keyframes coverPulse {
+          0%,
+          100%,
+          50% {
+            transform: scale(1);
+          }
+        }
         @keyframes weatherFloat {
-          0%, 100% { transform: translateY(0); }
-          50%       { transform: translateY(-6px); }
+          0%,
+          100% {
+            transform: translateY(0);
+          }
+          50% {
+            transform: translateY(-6px);
+          }
         }
       }
 
@@ -2431,7 +2467,11 @@
             const img = new Image();
             img.crossOrigin = "Anonymous";
             img.src = data.cover;
-            img.onload = () => { try { applyAlbumColors(img); } catch (e) {} };
+            img.onload = () => {
+              try {
+                applyAlbumColors(img);
+              } catch (e) {}
+            };
           }
           return;
         }
