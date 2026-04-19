@@ -99,14 +99,17 @@
         --duration-normal: 0.4s;
         --duration-slow: 0.85s;
         --fx-overscan: 22vmax;
+        --theme-transition: 1.2s;
+        --cover-fade-half: 0.6s;
+        --theme-ease: cubic-bezier(0.22, 0.88, 0.26, 1);
 
         transition:
-          --album-r 1.6s cubic-bezier(0.22, 1, 0.36, 1),
-          --album-g 1.6s cubic-bezier(0.22, 1, 0.36, 1),
-          --album-b 1.6s cubic-bezier(0.22, 1, 0.36, 1),
-          --album-ar 1.9s cubic-bezier(0.22, 1, 0.36, 1),
-          --album-ag 1.9s cubic-bezier(0.22, 1, 0.36, 1),
-          --album-ab 1.9s cubic-bezier(0.22, 1, 0.36, 1);
+          --album-r var(--theme-transition) var(--theme-ease),
+          --album-g var(--theme-transition) var(--theme-ease),
+          --album-b var(--theme-transition) var(--theme-ease),
+          --album-ar var(--theme-transition) var(--theme-ease),
+          --album-ag var(--theme-transition) var(--theme-ease),
+          --album-ab var(--theme-transition) var(--theme-ease);
       }
 
       /* ========== BASE STYLES ========== */
@@ -134,7 +137,7 @@
         position: relative;
         width: 100vw;
         height: 100vh;
-        transition: background 2.2s cubic-bezier(0.25, 0.1, 0.25, 1);
+        transition: background var(--theme-transition) var(--theme-ease);
       }
 
       /* Ambient background: slow-moving colour orbs */
@@ -161,7 +164,7 @@
           );
         animation: ambient 28s ease-in-out infinite alternate;
         pointer-events: none;
-        transition: background 2.2s cubic-bezier(0.25, 0.1, 0.25, 1);
+        transition: background var(--theme-transition) var(--theme-ease);
       }
 
       /* Film grain texture */
@@ -188,8 +191,8 @@
         will-change: transform, opacity, background;
         transform-origin: center;
         transition:
-          opacity 2.5s cubic-bezier(0.25, 0.1, 0.25, 1),
-          background 1.9s cubic-bezier(0.22, 1, 0.36, 1);
+          opacity var(--theme-transition) var(--theme-ease),
+          background var(--theme-transition) var(--theme-ease);
       }
 
       .album-color-wash.active {
@@ -221,8 +224,8 @@
         opacity: 0;
         will-change: transform, opacity;
         transition:
-          opacity 2.5s cubic-bezier(0.25, 0.1, 0.25, 1),
-          background 2.5s cubic-bezier(0.25, 0.1, 0.25, 1);
+          opacity var(--theme-transition) var(--theme-ease),
+          background var(--theme-transition) var(--theme-ease);
         z-index: 0;
       }
 
@@ -507,7 +510,7 @@
         filter: drop-shadow(
           0 0 28px rgba(var(--album-r), var(--album-g), var(--album-b), 0.25)
         );
-        transition: filter 2s var(--ease-smooth);
+        transition: filter var(--theme-transition) var(--ease-smooth);
         animation: timeGlow 10s ease-in-out infinite;
       }
 
@@ -521,7 +524,7 @@
           transparent
         );
         border-radius: 2px;
-        transition: background 2s var(--ease-smooth);
+        transition: background var(--theme-transition) var(--ease-smooth);
       }
 
       .date-display {
@@ -576,7 +579,7 @@
         animation: weatherFloat 14s ease-in-out infinite;
         flex-shrink: 0;
         margin-bottom: 0.25rem;
-        transition: filter 2s var(--ease-smooth);
+        transition: filter var(--theme-transition) var(--ease-smooth);
       }
 
       @keyframes weatherFloat {
@@ -604,7 +607,7 @@
         text-shadow:
           0 2px 0 rgba(0, 0, 0, 0.2),
           0 0 40px rgba(var(--album-r), var(--album-g), var(--album-b), 0.25);
-        transition: text-shadow 2s var(--ease-smooth);
+        transition: text-shadow var(--theme-transition) var(--ease-smooth);
       }
 
       .weather-condition {
@@ -624,7 +627,7 @@
         text-transform: uppercase;
         color: rgba(var(--album-r), var(--album-g), var(--album-b), 0.7);
         margin-top: 0.15rem;
-        transition: color 2s var(--ease-smooth);
+        transition: color var(--theme-transition) var(--ease-smooth);
       }
 
       /* ========== FORECAST CARD ========== */
@@ -638,7 +641,7 @@
           rgba(var(--album-r), var(--album-g), var(--album-b), 0.1);
         transition:
           grid-row var(--duration-normal) var(--ease-smooth),
-          border-color 2.2s var(--ease-smooth);
+          border-color var(--theme-transition) var(--ease-smooth);
       }
 
       #forecastCard.expanded {
@@ -669,8 +672,8 @@
           rgba(var(--album-r), var(--album-g), var(--album-b), 0.6);
         animation: livePulse 2.5s ease-out infinite;
         transition:
-          background 2.2s var(--ease-smooth),
-          box-shadow 2.2s var(--ease-smooth);
+          background var(--theme-transition) var(--ease-smooth),
+          box-shadow var(--theme-transition) var(--ease-smooth);
       }
 
       @keyframes livePulse {
@@ -771,7 +774,7 @@
         letter-spacing: 0.06em;
         text-transform: uppercase;
         font-variant-numeric: tabular-nums;
-        transition: color 2.2s var(--ease-smooth);
+        transition: color var(--theme-transition) var(--ease-smooth);
       }
 
       .forecast-icon {
@@ -828,9 +831,9 @@
         border: 1px solid
           rgba(var(--album-r), var(--album-g), var(--album-b), 0.22);
         transition:
-          background 2s var(--ease-smooth),
-          border-color 2s var(--ease-smooth),
-          box-shadow 2s var(--ease-smooth);
+          background var(--theme-transition) var(--ease-smooth),
+          border-color var(--theme-transition) var(--ease-smooth),
+          box-shadow var(--theme-transition) var(--ease-smooth);
       }
 
       #musicCard:not(.hidden) {
@@ -854,7 +857,7 @@
         filter: blur(16px);
         border-radius: 50%;
         pointer-events: none;
-        transition: background 2s var(--ease-smooth);
+        transition: background var(--theme-transition) var(--ease-smooth);
       }
 
       .music-cover {
@@ -868,7 +871,18 @@
         animation: coverPulse 7s ease-in-out infinite;
         position: relative;
         z-index: 1;
-        transition: box-shadow 2s var(--ease-smooth);
+        opacity: 1;
+        filter: saturate(1) brightness(1) blur(0);
+        will-change: opacity, filter;
+        transition:
+          box-shadow var(--theme-transition) var(--theme-ease),
+          opacity var(--cover-fade-half) var(--theme-ease),
+          filter var(--cover-fade-half) var(--theme-ease);
+      }
+
+      .music-cover.cover-fading-out {
+        opacity: 0;
+        filter: saturate(0.9) brightness(0.78) blur(2px);
       }
 
       @keyframes coverPulse {
@@ -908,7 +922,7 @@
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
-        transition: color 2s var(--ease-smooth);
+        transition: color var(--theme-transition) var(--ease-smooth);
       }
 
       .music-progress {
@@ -932,7 +946,7 @@
         width: 0%;
         transition:
           width 200ms linear,
-          background 2s var(--ease-smooth);
+          background var(--theme-transition) var(--ease-smooth);
         box-shadow:
           0 0 12px rgba(var(--album-r), var(--album-g), var(--album-b), 0.6),
           0 0 24px rgba(var(--album-r), var(--album-g), var(--album-b), 0.25);
@@ -955,7 +969,7 @@
         opacity: 0;
         transition:
           opacity 0.3s,
-          background 2s var(--ease-smooth);
+          background var(--theme-transition) var(--ease-smooth);
       }
 
       .music-progress:hover .music-progress-bar::after {
@@ -1286,7 +1300,7 @@
         );
         border-radius: 50%;
         animation: spin 1.4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-        transition: border-color 2s var(--ease-smooth);
+        transition: border-color var(--theme-transition) var(--ease-smooth);
       }
 
       @keyframes spin {
@@ -2161,8 +2175,12 @@
       let musicDuration = 0;
       let currentSongKey = "";
       let musicDataQueue = Promise.resolve();
+      const COVER_TRANSITION_MS = 1200;
+      const COVER_TRANSITION_HALF_MS = COVER_TRANSITION_MS / 2;
       const COVER_FALLBACK_DELAY_MS = 5000;
       let deferredCoverFallbackTimeout = null;
+      let coverSwapTimeout = null;
+      let coverSwapToken = 0;
 
       // ========== COLOR INTELLIGENCE ==========
 
@@ -2384,6 +2402,67 @@
         }
       }
 
+      function clearCoverSwapState() {
+        if (coverSwapTimeout) {
+          clearTimeout(coverSwapTimeout);
+          coverSwapTimeout = null;
+        }
+        coverEl.classList.remove("cover-fading-out");
+      }
+
+      function setCoverSourceWithTransition(nextSrc, { skipPreload = false } = {}) {
+        const normalizedSrc = String(nextSrc || "").trim();
+        if (!normalizedSrc) return;
+
+        clearCoverSwapState();
+        const transitionToken = ++coverSwapToken;
+        const currentSrc = coverEl.getAttribute("src") || "";
+
+        const swapCover = () => {
+          if (transitionToken !== coverSwapToken) return;
+
+          const isDifferentSrc = currentSrc !== normalizedSrc;
+          if (!isDifferentSrc) {
+            return;
+          }
+
+          const applyNewCover = () => {
+            if (transitionToken !== coverSwapToken) return;
+            coverEl.src = normalizedSrc;
+            // Petit délai pour laisser le navigateur peindre le nouvel état
+            // avant de relancer le fade-in.
+            setTimeout(() => {
+              if (transitionToken !== coverSwapToken) return;
+              coverEl.classList.remove("cover-fading-out");
+            }, 20);
+          };
+
+          // Même sans ancienne cover (premier affichage), on force un fade-in.
+          if (!currentSrc) {
+            coverEl.classList.add("cover-fading-out");
+            applyNewCover();
+            return;
+          }
+
+          coverEl.classList.add("cover-fading-out");
+          coverSwapTimeout = setTimeout(() => {
+            applyNewCover();
+            coverSwapTimeout = null;
+          }, COVER_TRANSITION_HALF_MS);
+        };
+
+        if (skipPreload || normalizedSrc.startsWith("data:image/")) {
+          swapCover();
+          return;
+        }
+
+        const preloadImage = new Image();
+        preloadImage.crossOrigin = "Anonymous";
+        preloadImage.onload = swapCover;
+        preloadImage.onerror = swapCover;
+        preloadImage.src = normalizedSrc;
+      }
+
       function scheduleDeferredCoverFallback(songKey) {
         clearDeferredCoverFallback();
         deferredCoverFallbackTimeout = setTimeout(() => {
@@ -2410,7 +2489,7 @@
           coverEl.dataset.hasRealCover = "1";
           if (songKey) coverEl.dataset.coverSongKey = songKey;
           coverEl.dataset.fallbackApplied = "0";
-          coverEl.src = normalizedCover;
+          setCoverSourceWithTransition(normalizedCover);
           return;
         }
 
@@ -2426,13 +2505,14 @@
         coverEl.dataset.hasRealCover = "0";
         if (songKey) coverEl.dataset.coverSongKey = songKey;
         coverEl.dataset.fallbackApplied = "0";
-        coverEl.src = PLACEHOLDER_COVER;
+        setCoverSourceWithTransition(PLACEHOLDER_COVER, { skipPreload: true });
       }
 
       coverEl.addEventListener("error", () => {
         if (coverEl.dataset.fallbackApplied === "1") return;
         coverEl.dataset.fallbackApplied = "1";
         coverEl.dataset.hasRealCover = "0";
+        clearCoverSwapState();
         coverEl.src = PLACEHOLDER_COVER;
         resetMusicCardBackground();
       });
@@ -2669,6 +2749,7 @@
           window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
         clearDeferredCoverFallback();
+        clearCoverSwapState();
 
         if (progressInterval) clearInterval(progressInterval);
         stopLyricsSync();
