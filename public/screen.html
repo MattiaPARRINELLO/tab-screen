@@ -2410,7 +2410,10 @@
         coverEl.classList.remove("cover-fading-out");
       }
 
-      function setCoverSourceWithTransition(nextSrc, { skipPreload = false } = {}) {
+      function setCoverSourceWithTransition(
+        nextSrc,
+        { skipPreload = false } = {},
+      ) {
         const normalizedSrc = String(nextSrc || "").trim();
         if (!normalizedSrc) return;
 
