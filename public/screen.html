@@ -98,6 +98,7 @@
         --duration-fast: 0.18s;
         --duration-normal: 0.4s;
         --duration-slow: 0.85s;
+        --fx-overscan: 22vmax;
 
         transition:
           --album-r 1.6s cubic-bezier(0.22, 1, 0.36, 1),
@@ -178,11 +179,14 @@
       /* Dynamic album color wash overlay */
       .album-color-wash {
         position: fixed;
-        inset: 0;
+        /* Overscan pour éviter que les bords n'apparaissent pendant l'animation */
+        inset: calc(-1 * var(--fx-overscan));
         z-index: 0;
         pointer-events: none;
         opacity: 0;
         mix-blend-mode: screen;
+        will-change: transform, opacity, background;
+        transform-origin: center;
         transition:
           opacity 2.5s cubic-bezier(0.25, 0.1, 0.25, 1),
           background 1.9s cubic-bezier(0.22, 1, 0.36, 1);
@@ -228,10 +232,10 @@
 
       /* Grand orbe primaire — bas-droite, là où est la musique */
       .bg-orb-1 {
-        width: 80vw;
-        height: 70vh;
-        bottom: -18vh;
-        right: -18vw;
+        width: 102vw;
+        height: 92vh;
+        bottom: -30vh;
+        right: -30vw;
         filter: blur(80px);
         background: radial-gradient(
           ellipse at 40% 40%,
@@ -244,10 +248,10 @@
 
       /* Orbe accent — haut-gauche */
       .bg-orb-2 {
-        width: 60vw;
-        height: 55vh;
-        top: -12vh;
-        left: -12vw;
+        width: 82vw;
+        height: 74vh;
+        top: -24vh;
+        left: -24vw;
         filter: blur(90px);
         background: radial-gradient(
           ellipse at 55% 55%,
@@ -260,10 +264,10 @@
 
       /* Petit orbe central — flotte entre les deux */
       .bg-orb-3 {
-        width: 45vw;
-        height: 40vh;
-        top: 28vh;
-        left: 22vw;
+        width: 62vw;
+        height: 56vh;
+        top: 18vh;
+        left: 10vw;
         filter: blur(100px);
         background: radial-gradient(
           circle at center,
