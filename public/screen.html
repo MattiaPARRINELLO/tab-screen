@@ -434,11 +434,14 @@
       }
 
       .time-display {
-        font-size: clamp(3.4rem, 9vw, 7rem);
+        /* 9vw était trop large : la carte fait 4/12 du viewport.
+           5.5vw ≈ card_width / 4.36_chars → tient sur toutes les tailles. */
+        font-size: clamp(2.4rem, 5.5vw, 7rem);
         font-weight: 700;
         letter-spacing: -0.05em;
         line-height: 1;
         white-space: nowrap;
+        overflow: hidden;
         font-variant-numeric: tabular-nums;
         background: linear-gradient(
           150deg,
@@ -1398,6 +1401,58 @@
         max-width: 440px;
       }
 
+      /* ========== TABLET / PERFORMANCE MODE ========== */
+
+      /* Écrans ≤ 1280px ou hauteur ≤ 800px : réduire les effets GPU */
+      @media (max-width: 1280px), (max-height: 800px) {
+        /* Blur réduit — le backdrop-filter blur(32px) est le plus gros coût GPU */
+        .card {
+          backdrop-filter: blur(14px) saturate(1.3);
+          -webkit-backdrop-filter: blur(14px) saturate(1.3);
+        }
+
+        /* Supprimer le grain SVG (calcul CPU continu) */
+        body::after { display: none; }
+
+        /* Orbes : blur réduit, orbe central supprimé */
+        .bg-orb-1 { filter: blur(50px); }
+        .bg-orb-2 { filter: blur(55px); }
+        .bg-orb-3 { display: none; }
+
+        /* Animations moins agressives */
+        .album-color-wash.active { animation-duration: 24s; }
+        .bg-orb-1 { animation-duration: 32s; }
+        .bg-orb-2 { animation-duration: 26s; }
+      }
+
+      /* Tablette / petit écran : mode économique complet */
+      @media (max-width: 900px), (max-height: 700px) {
+        .card {
+          backdrop-filter: blur(8px);
+          -webkit-backdrop-filter: blur(8px);
+        }
+
+        /* Supprimer tous les orbes */
+        .bg-orb { display: none; }
+
+        /* Supprimer le wash animé — garder juste le fond body */
+        .album-color-wash { display: none; }
+
+        /* Réduire les ombres complexes */
+        .card { box-shadow: 0 4px 16px rgba(0,0,0,0.4); }
+
+        /* Animations plus simples */
+        @keyframes breathe {
+          0%, 100% { box-shadow: 0 4px 16px rgba(0,0,0,0.4); }
+          50%       { box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
+        }
+        @keyframes coverPulse { 0%, 100%, 50% { transform: scale(1); } }
+        @keyframes weatherFloat {
+          0%, 100% { transform: translateY(0); }
+          50%       { transform: translateY(-6px); }
+        }
+      }
+
       /* ========== UTILITY ========== */
       .hidden {
         display: none !important;
@@ -2352,20 +2407,38 @@
       }
 
       socket.on("musicData", async (data) => {
+        const nextSongKey = `${data.title || ""}__${data.artist || ""}`;
+        const isSongChanged = nextSongKey !== currentSongKey;
+
+        // Même morceau déjà visible = le serveur nous envoie juste la cover.
+        // Mise à jour silencieuse : on ne touche ni paroles, ni timers, ni animations.
+        if (!isSongChanged && !musicCard.classList.contains("hidden")) {
+          if (data.cover) {
+            setCoverWithFallback(data.cover);
+            // Appliquer les couleurs album maintenant qu'on a la vraie pochette
+            const img = new Image();
+            img.crossOrigin = "Anonymous";
+            img.src = data.cover;
+            img.onload = () => { try { applyAlbumColors(img); } catch (e) {} };
+          }
+          return;
+        }
+
         // Clear previous timers
         if (musicTimeout) clearTimeout(musicTimeout);
         if (progressInterval) clearInterval(progressInterval);
-        // Entre deux morceaux, on passe en état loading (pas fullscreen immédiat)
+        // Entre deux morceaux on passe en état loading (pas fullscreen immédiat)
         // pour éviter un aller-retour visuel avant le résultat des paroles.
         stopLyricsSync("loading");
-
-        const nextSongKey = `${data.title || ""}__${data.artist || ""}`;
-        const isSongChanged = nextSongKey !== currentSongKey;
 
         // Store timing FIRST (needed for lyrics sync)
         musicInitialPosition = data.position || 0;
         musicDuration = data.duration || 0;
         musicStartTime = Date.now();
+
+        // Mettre à jour currentSongKey AVANT tout await pour éviter la race
+        // où la cover arrive pendant l'animation et déclenche un 2e rendu complet.
+        currentSongKey = nextSongKey;
 
         // Afficher la durée totale formatée
         if (musicDurationEl)
@@ -2377,7 +2450,6 @@
           artistEl.textContent = data.artist || "Artiste inconnu";
           setCoverWithFallback(data.cover);
         });
-        currentSongKey = nextSongKey;
 
         // Fetch and display lyrics (async, timing vars already set)
         fetchLyrics(data.title, data.artist, data.album).then(

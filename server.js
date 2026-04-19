@@ -187,33 +187,85 @@ app.post('/api/music', async (req, res) => {
     }).catch(() => {});
 });
 
-/** Cherche la cover sur Deezer, puis Last.fm en fallback */
-async function fetchCover(title, artist) {
-    // Deezer
-    try {
-        const query    = `artist:"${artist}" track:"${title}"`;
-        const url      = `https://api.deezer.com/search?q=${encodeURIComponent(query)}`;
-        const resp     = await fetchWithTimeout(url, 5000);
-        const data     = await resp.json();
+/** Retire les suffixes parasites d'un titre ("feat.", "(Radio Edit)", etc.) */
+function normalizeTitle(title) {
+    return title
+        .replace(/\s*[\(\[](feat\.?|ft\.?|featuring|with)[^\)\]]*[\)\]]/gi, '')
+        .replace(/\s*[-–—]\s*(radio edit|single|remaster.*|live.*|acoustic.*|version.*)$/gi, '')
+        .trim() || title;
+}
 
-        if (data.data?.length) {
-            const exact = data.data.find(
-                item => item.title.toLowerCase()       === title.toLowerCase()
-                     && item.artist.name.toLowerCase() === artist.toLowerCase()
-            );
-            const cover = (exact || data.data[0]).album.cover_xl;
-            if (cover) return cover;
+/** Meilleure cover disponible parmi les champs Deezer */
+function bestDeezerCover(item) {
+    return item.album.cover_xl || item.album.cover_big || item.album.cover_medium || '';
+}
+
+/** Cherche sur Deezer avec une requête donnée, retourne la meilleure cover */
+async function deezerSearch(query, title, artist) {
+    const url  = `https://api.deezer.com/search?q=${encodeURIComponent(query)}`;
+    const resp = await fetchWithTimeout(url, 7000);
+    const data = await resp.json();
+    if (!data.data?.length) return '';
+
+    const titleLow  = title.toLowerCase();
+    const artistLow = artist.toLowerCase();
+    const normLow   = normalizeTitle(title).toLowerCase();
+
+    // 1. Match exact titre + artiste
+    const exact = data.data.find(
+        i => i.title.toLowerCase() === titleLow
+          && i.artist.name.toLowerCase() === artistLow
+    );
+    if (exact) return bestDeezerCover(exact);
+
+    // 2. Match titre normalisé + artiste
+    const normMatch = data.data.find(
+        i => i.title.toLowerCase() === normLow
+          && i.artist.name.toLowerCase() === artistLow
+    );
+    if (normMatch) return bestDeezerCover(normMatch);
+
+    // 3. Premier résultat contenant le titre normalisé
+    const partial = data.data.find(
+        i => i.title.toLowerCase().includes(normLow)
+    );
+    if (partial) return bestDeezerCover(partial);
+
+    // 4. Premier résultat tout court
+    return bestDeezerCover(data.data[0]);
+}
+
+/** Cherche la cover sur Deezer (3 stratégies) puis Last.fm en fallback */
+async function fetchCover(title, artist) {
+    const norm = normalizeTitle(title);
+
+    // Stratégies Deezer du plus précis au plus large
+    const queries = [
+        `artist:"${artist}" track:"${title}"`,
+        ...(norm !== title ? [`artist:"${artist}" track:"${norm}"`] : []),
+        `${artist} ${norm}`,
+    ];
+
+    for (const query of queries) {
+        try {
+            const cover = await deezerSearch(query, title, artist);
+            if (cover) {
+                console.log(`[cover] Deezer OK : ${query.slice(0, 60)}`);
+                return cover;
+            }
+        } catch (e) {
+            console.error('[cover] Deezer :', e.message);
         }
-    } catch (e) {
-        console.error('[cover] Deezer :', e.message);
     }
 
     // Last.fm fallback
     try {
         const url  = `https://ws.audioscrobbler.com/2.0/?method=track.getInfo&api_key=${LASTFM_API_KEY}&artist=${encodeURIComponent(artist)}&track=${encodeURIComponent(title)}&format=json`;
-        const resp = await fetchWithTimeout(url, 5000);
+        const resp = await fetchWithTimeout(url, 6000);
         const data = await resp.json();
-        return data?.track?.album?.image?.find(img => img.size === 'extralarge')?.['#text'] || '';
+        const cover = data?.track?.album?.image?.find(img => img.size === 'extralarge')?.['#text'] || '';
+        if (cover) console.log('[cover] Last.fm OK');
+        return cover;
     } catch (e) {
         console.error('[cover] Last.fm :', e.message);
         return '';
