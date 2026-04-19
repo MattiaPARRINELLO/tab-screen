@@ -2073,6 +2073,7 @@
       let musicInitialPosition = 0;
       let musicDuration = 0;
       let currentSongKey = "";
+      let musicDataQueue = Promise.resolve();
 
       // ========== COLOR INTELLIGENCE ==========
 
@@ -2406,7 +2407,18 @@
         }, 250); // slower updates to save CPU on low-power devices
       }
 
-      socket.on("musicData", async (data) => {
+      // Les events peuvent arriver en rafale (sans cover puis avec cover).
+      // On les traite séquentiellement pour éviter qu'un ancien event
+      // réécrase la cover déjà mise à jour par un event plus récent.
+      socket.on("musicData", (data) => {
+        musicDataQueue = musicDataQueue
+          .then(() => handleMusicData(data))
+          .catch((error) => {
+            console.error("musicData handler error:", error);
+          });
+      });
+
+      async function handleMusicData(data) {
         const nextSongKey = `${data.title || ""}__${data.artist || ""}`;
         const isSongChanged = nextSongKey !== currentSongKey;
 
@@ -2499,7 +2511,7 @@
             hideMusicCard();
           }, remaining * 1000);
         }
-      });
+      }
 
       function hideMusicCard() {
         // Graceful fade-out before hiding
