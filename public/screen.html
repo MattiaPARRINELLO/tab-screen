@@ -2161,6 +2161,8 @@
       let musicDuration = 0;
       let currentSongKey = "";
       let musicDataQueue = Promise.resolve();
+      const COVER_FALLBACK_DELAY_MS = 5000;
+      let deferredCoverFallbackTimeout = null;
 
       // ========== COLOR INTELLIGENCE ==========
 
@@ -2375,16 +2377,62 @@
         root.style.setProperty("--album-ab", "250");
       }
 
-      function setCoverWithFallback(coverUrl) {
-        const nextSrc =
-          coverUrl && String(coverUrl).trim() ? coverUrl : PLACEHOLDER_COVER;
+      function clearDeferredCoverFallback() {
+        if (deferredCoverFallbackTimeout) {
+          clearTimeout(deferredCoverFallbackTimeout);
+          deferredCoverFallbackTimeout = null;
+        }
+      }
+
+      function scheduleDeferredCoverFallback(songKey) {
+        clearDeferredCoverFallback();
+        deferredCoverFallbackTimeout = setTimeout(() => {
+          const isStillCurrentSong = currentSongKey === songKey;
+          const hasCoverForCurrentSong =
+            coverEl.dataset.coverSongKey === songKey &&
+            coverEl.dataset.hasRealCover === "1";
+
+          if (!isStillCurrentSong || hasCoverForCurrentSong) return;
+
+          setCoverWithFallback("", { songKey });
+          resetMusicCardBackground();
+        }, COVER_FALLBACK_DELAY_MS);
+      }
+
+      function setCoverWithFallback(
+        coverUrl,
+        { preserveExistingOnMissing = false, songKey = "" } = {},
+      ) {
+        const normalizedCover = coverUrl && String(coverUrl).trim();
+
+        if (normalizedCover) {
+          clearDeferredCoverFallback();
+          coverEl.dataset.hasRealCover = "1";
+          if (songKey) coverEl.dataset.coverSongKey = songKey;
+          coverEl.dataset.fallbackApplied = "0";
+          coverEl.src = normalizedCover;
+          return;
+        }
+
+        const currentSrc = coverEl.getAttribute("src") || "";
+        if (
+          preserveExistingOnMissing &&
+          currentSrc &&
+          currentSrc !== PLACEHOLDER_COVER
+        ) {
+          return;
+        }
+
+        coverEl.dataset.hasRealCover = "0";
+        if (songKey) coverEl.dataset.coverSongKey = songKey;
         coverEl.dataset.fallbackApplied = "0";
-        coverEl.src = nextSrc;
+        coverEl.src = PLACEHOLDER_COVER;
       }
 
       coverEl.addEventListener("error", () => {
         if (coverEl.dataset.fallbackApplied === "1") return;
         coverEl.dataset.fallbackApplied = "1";
+        coverEl.dataset.hasRealCover = "0";
         coverEl.src = PLACEHOLDER_COVER;
         resetMusicCardBackground();
       });
@@ -2509,11 +2557,15 @@
         const nextSongKey = `${data.title || ""}__${data.artist || ""}`;
         const isSongChanged = nextSongKey !== currentSongKey;
 
+        if (isSongChanged) {
+          clearDeferredCoverFallback();
+        }
+
         // Même morceau déjà visible = le serveur nous envoie juste la cover.
         // Mise à jour silencieuse : on ne touche ni paroles, ni timers, ni animations.
         if (!isSongChanged && !musicCard.classList.contains("hidden")) {
           if (data.cover) {
-            setCoverWithFallback(data.cover);
+            setCoverWithFallback(data.cover, { songKey: nextSongKey });
             // Appliquer les couleurs album maintenant qu'on a la vraie pochette
             const img = new Image();
             img.crossOrigin = "Anonymous";
@@ -2551,7 +2603,10 @@
           // Update music info
           trackEl.textContent = data.title || "Titre inconnu";
           artistEl.textContent = data.artist || "Artiste inconnu";
-          setCoverWithFallback(data.cover);
+          setCoverWithFallback(data.cover, {
+            preserveExistingOnMissing: true,
+            songKey: nextSongKey,
+          });
         });
 
         // Fetch and display lyrics (async, timing vars already set)
@@ -2571,6 +2626,7 @@
 
         // Extract and apply album colors
         if (data.cover) {
+          clearDeferredCoverFallback();
           const img = new Image();
           img.crossOrigin = "Anonymous";
           img.src = data.cover;
@@ -2585,7 +2641,9 @@
           };
           img.onerror = () => resetMusicCardBackground();
         } else {
-          resetMusicCardBackground();
+          // Éviter un flash brutal: on conserve temporairement l'ancien thème
+          // et on ne passe au fallback que si la cover n'arrive pas rapidement.
+          scheduleDeferredCoverFallback(nextSongKey);
         }
 
         // Show music card with animation
@@ -2609,6 +2667,8 @@
         const prefersReducedMotion =
           window.matchMedia &&
           window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+        clearDeferredCoverFallback();
 
         if (progressInterval) clearInterval(progressInterval);
         stopLyricsSync();
