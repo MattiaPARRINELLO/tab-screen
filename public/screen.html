@@ -140,6 +140,15 @@
         transition: background var(--theme-transition) var(--theme-ease);
       }
 
+      body.music-theme-active {
+        background: radial-gradient(
+          ellipse 80% 70% at 80% 85%,
+          rgba(var(--album-r), var(--album-g), var(--album-b), 0.28) 0%,
+          rgba(var(--album-ar), var(--album-ag), var(--album-ab), 0.12) 45%,
+          #0a0e14 75%
+        );
+      }
+
       /* Ambient background: slow-moving colour orbs */
       body::before {
         content: "";
@@ -188,6 +197,20 @@
         pointer-events: none;
         opacity: 0;
         mix-blend-mode: screen;
+        background:
+          radial-gradient(
+            ellipse 140% 120% at 78% 88%,
+            rgba(var(--album-r), var(--album-g), var(--album-b), 0.6) 0%,
+            rgba(var(--album-r), var(--album-g), var(--album-b), 0.28) 35%,
+            rgba(var(--album-ar), var(--album-ag), var(--album-ab), 0.08) 65%,
+            transparent 88%
+          ),
+          radial-gradient(
+            ellipse 80% 60% at 12% 15%,
+            rgba(var(--album-ar), var(--album-ag), var(--album-ab), 0.3) 0%,
+            rgba(var(--album-ar), var(--album-ag), var(--album-ab), 0.08) 50%,
+            transparent 80%
+          );
         will-change: transform, opacity, background;
         transform-origin: center;
         transition:
@@ -823,13 +846,17 @@
         gap: calc(var(--gap-lg) * 1.1);
         padding: calc(var(--gap-lg) * 1.35);
         background: linear-gradient(
-          150deg,
-          rgba(var(--album-r), var(--album-g), var(--album-b), 0.1) 0%,
-          rgba(var(--album-r), var(--album-g), var(--album-b), 0.04) 60%,
-          rgba(0, 0, 0, 0.1) 100%
+          145deg,
+          rgba(var(--album-r), var(--album-g), var(--album-b), 0.22) 0%,
+          rgba(var(--album-ar), var(--album-ag), var(--album-ab), 0.12) 60%,
+          rgba(var(--album-r), var(--album-g), var(--album-b), 0.08) 100%
         );
         border: 1px solid
           rgba(var(--album-r), var(--album-g), var(--album-b), 0.22);
+        box-shadow:
+          0 4px 20px rgba(0, 0, 0, 0.3),
+          0 0 60px rgba(var(--album-r), var(--album-g), var(--album-b), 0.15),
+          inset 0 1px 0 rgba(var(--album-r), var(--album-g), var(--album-b), 0.12);
         transition:
           background var(--theme-transition) var(--ease-smooth),
           border-color var(--theme-transition) var(--ease-smooth),
@@ -2177,7 +2204,7 @@
       let musicDataQueue = Promise.resolve();
       const COVER_TRANSITION_MS = 1200;
       const COVER_TRANSITION_HALF_MS = COVER_TRANSITION_MS / 2;
-      const COVER_FALLBACK_DELAY_MS = 5000;
+      const COVER_FALLBACK_DELAY_MS = 9000;
       let deferredCoverFallbackTimeout = null;
       let coverSwapTimeout = null;
       let coverSwapToken = 0;
@@ -2320,53 +2347,9 @@
         root.style.setProperty("--album-ag", ag);
         root.style.setProperty("--album-ab", ab);
 
-        // Carte musique
-        musicCard.style.background = `
-          linear-gradient(145deg,
-            rgba(${pr}, ${pg}, ${pb}, 0.22) 0%,
-            rgba(${ar}, ${ag}, ${ab}, 0.12) 60%,
-            rgba(${pr}, ${pg}, ${pb}, 0.08) 100%
-          )
-        `;
-        musicCard.style.borderColor = `rgba(${pr}, ${pg}, ${pb}, 0.35)`;
-        musicCard.style.boxShadow = `
-          0 4px 20px rgba(0,0,0,0.3),
-          0 0 60px rgba(${pr}, ${pg}, ${pb}, 0.15),
-          inset 0 1px 0 rgba(${pr}, ${pg}, ${pb}, 0.12)
-        `;
-
-        // Glow de la pochette
-        coverEl.style.boxShadow = `
-          0 8px 40px rgba(0,0,0,0.4),
-          0 0 60px rgba(${pr}, ${pg}, ${pb}, 0.5)
-        `;
-
-        // Fond du body : dégradé ancré sur la zone musique (bas-droite)
-        document.body.style.background = `
-          radial-gradient(
-            ellipse 80% 70% at 80% 85%,
-            rgba(${pr}, ${pg}, ${pb}, 0.28) 0%,
-            rgba(${ar}, ${ag}, ${ab}, 0.12) 45%,
-            #0a0e14 75%
-          )
-        `;
-
-        // Overlay screen-blend : fait briller les couleurs sur le fond sombre
-        albumColorWash.style.background = `
-          radial-gradient(
-            ellipse 140% 120% at 78% 88%,
-            rgba(${pr}, ${pg}, ${pb}, 0.6) 0%,
-            rgba(${pr}, ${pg}, ${pb}, 0.28) 35%,
-            rgba(${ar}, ${ag}, ${ab}, 0.08) 65%,
-            transparent 88%
-          ),
-          radial-gradient(
-            ellipse 80% 60% at 12% 15%,
-            rgba(${ar}, ${ag}, ${ab}, 0.3) 0%,
-            rgba(${ar}, ${ag}, ${ab}, 0.08) 50%,
-            transparent 80%
-          )
-        `;
+        // Le thème est entièrement piloté par vars CSS pour lisser
+        // les transitions de couleur sans saut visuel.
+        document.body.classList.add("music-theme-active");
         albumColorWash.classList.add("active");
 
         // Activer les orbes animés
@@ -2376,12 +2359,8 @@
       }
 
       function resetMusicCardBackground() {
-        musicCard.style.background = DEFAULT_MUSIC_CARD_BACKGROUND;
-        musicCard.style.borderColor = "";
-        musicCard.style.boxShadow = "";
-        coverEl.style.boxShadow = "";
+        document.body.classList.remove("music-theme-active");
         albumColorWash.classList.remove("active");
-        document.body.style.background = "";
         document
           .querySelectorAll(".bg-orb")
           .forEach((o) => o.classList.remove("active"));
@@ -2476,8 +2455,9 @@
 
           if (!isStillCurrentSong || hasCoverForCurrentSong) return;
 
+          // En cas de cover absente, on garde le thème courant
+          // pour éviter tout flash de couleur pendant le chargement.
           setCoverWithFallback("", { songKey });
-          resetMusicCardBackground();
         }, COVER_FALLBACK_DELAY_MS);
       }
 
@@ -2517,7 +2497,6 @@
         coverEl.dataset.hasRealCover = "0";
         clearCoverSwapState();
         coverEl.src = PLACEHOLDER_COVER;
-        resetMusicCardBackground();
       });
 
       async function animateSongChangeIfNeeded(isSongChanged, applyUpdate) {
@@ -2719,10 +2698,9 @@
               applyAlbumColors(img);
             } catch (e) {
               console.error("Color extraction failed:", e);
-              resetMusicCardBackground();
             }
           };
-          img.onerror = () => resetMusicCardBackground();
+          img.onerror = () => {};
         } else {
           // Éviter un flash brutal: on conserve temporairement l'ancien thème
           // et on ne passe au fallback que si la cover n'arrive pas rapidement.
@@ -2756,9 +2734,8 @@
 
         if (progressInterval) clearInterval(progressInterval);
         stopLyricsSync();
+        document.body.classList.remove("music-theme-active");
         albumColorWash.classList.remove("active");
-        // Fade out the ambient album tint when the track ends.
-        document.body.style.background = "";
         document
           .querySelectorAll(".bg-orb")
           .forEach((orb) => orb.classList.remove("active"));
