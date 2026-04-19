@@ -11,6 +11,43 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/color-thief/2.3.2/color-thief.umd.js"></script>
 
     <style>
+      /* Rendre les variables de couleur album animables */
+      @property --album-r {
+        syntax: "<number>";
+        inherits: true;
+        initial-value: 78;
+      }
+
+      @property --album-g {
+        syntax: "<number>";
+        inherits: true;
+        initial-value: 205;
+      }
+
+      @property --album-b {
+        syntax: "<number>";
+        inherits: true;
+        initial-value: 196;
+      }
+
+      @property --album-ar {
+        syntax: "<number>";
+        inherits: true;
+        initial-value: 167;
+      }
+
+      @property --album-ag {
+        syntax: "<number>";
+        inherits: true;
+        initial-value: 139;
+      }
+
+      @property --album-ab {
+        syntax: "<number>";
+        inherits: true;
+        initial-value: 250;
+      }
+
       /* ========== DESIGN SYSTEM ========== */
       :root {
         /* Fond */
@@ -61,6 +98,14 @@
         --duration-fast: 0.18s;
         --duration-normal: 0.4s;
         --duration-slow: 0.85s;
+
+        transition:
+          --album-r 1.6s cubic-bezier(0.22, 1, 0.36, 1),
+          --album-g 1.6s cubic-bezier(0.22, 1, 0.36, 1),
+          --album-b 1.6s cubic-bezier(0.22, 1, 0.36, 1),
+          --album-ar 1.9s cubic-bezier(0.22, 1, 0.36, 1),
+          --album-ag 1.9s cubic-bezier(0.22, 1, 0.36, 1),
+          --album-ab 1.9s cubic-bezier(0.22, 1, 0.36, 1);
       }
 
       /* ========== BASE STYLES ========== */
@@ -138,7 +183,9 @@
         pointer-events: none;
         opacity: 0;
         mix-blend-mode: screen;
-        transition: opacity 2.5s cubic-bezier(0.25, 0.1, 0.25, 1);
+        transition:
+          opacity 2.5s cubic-bezier(0.25, 0.1, 0.25, 1),
+          background 1.9s cubic-bezier(0.22, 1, 0.36, 1);
       }
 
       .album-color-wash.active {
