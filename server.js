@@ -91,9 +91,55 @@ let currentMusic = { title: '', artist: '', position: 0, duration: 0 };
 // Routes statiques
 // ──────────────────────────────────────────────
 
-app.get('/',       (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
-app.get('/screen', (req, res) => res.sendFile(path.join(__dirname, 'public', 'screen.html')));
-app.get('/cache',  (req, res) => res.sendFile(path.join(__dirname, 'public', 'cache.html')));
+app.get('/',            (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
+app.get('/screen',      (req, res) => res.sendFile(path.join(__dirname, 'public', 'screen.html')));
+app.get('/cache',       (req, res) => res.sendFile(path.join(__dirname, 'public', 'cache.html')));
+app.get('/message',     (req, res) => res.sendFile(path.join(__dirname, 'public', 'message.html')));
+app.get('/historique',  (req, res) => res.sendFile(path.join(__dirname, 'public', 'historique.html')));
+
+// ──────────────────────────────────────────────
+// Messages
+// ──────────────────────────────────────────────
+
+const MESSAGES_PATH = path.join(__dirname, 'cache', 'messages.json');
+
+function loadMessages() {
+    try {
+        if (fs.existsSync(MESSAGES_PATH)) {
+            return JSON.parse(fs.readFileSync(MESSAGES_PATH, 'utf8'));
+        }
+    } catch (e) { console.error('[messages] Erreur lecture:', e.message); }
+    return [];
+}
+
+function saveMessages(msgs) {
+    try {
+        fs.mkdirSync(path.dirname(MESSAGES_PATH), { recursive: true });
+        fs.writeFileSync(MESSAGES_PATH, JSON.stringify(msgs, null, 2));
+    } catch (e) { console.error('[messages] Erreur écriture:', e.message); }
+}
+
+let pendingMessage  = null;
+let messageHistory  = loadMessages();
+
+app.post('/api/message', (req, res) => {
+    const text = (req.body.text || '').trim();
+    if (!text) return res.status(400).json({ error: 'Message vide' });
+    if (text.length > 500) return res.status(400).json({ error: 'Message trop long (500 caractères max)' });
+
+    const ip = (req.headers['x-forwarded-for'] || req.socket.remoteAddress || '').split(',')[0].trim();
+    const entry = { text, sentAt: Date.now(), ip };
+
+    pendingMessage = entry;
+    messageHistory.unshift(entry);          // plus récent en premier
+    if (messageHistory.length > 200) messageHistory = messageHistory.slice(0, 200);
+    saveMessages(messageHistory);
+
+    io.emit('popupMessage', pendingMessage);
+    res.json({ ok: true });
+});
+
+app.get('/api/messages', (req, res) => res.json(messageHistory));
 
 // ──────────────────────────────────────────────
 // Météo
@@ -277,14 +323,26 @@ async function fetchCover(title, artist) {
 // ──────────────────────────────────────────────
 
 io.on('connection', socket => {
-    if (!currentMusic.title) return;
-
-    const elapsed         = (Date.now() - (currentMusic.startTime || Date.now())) / 1000;
-    const adjustedPosition = currentMusic.position + elapsed;
-
-    if (adjustedPosition < currentMusic.duration) {
-        socket.emit('musicData', { ...currentMusic, position: adjustedPosition });
+    // Rattrapage musique
+    if (currentMusic.title) {
+        const elapsed          = (Date.now() - (currentMusic.startTime || Date.now())) / 1000;
+        const adjustedPosition = currentMusic.position + elapsed;
+        if (adjustedPosition < currentMusic.duration) {
+            socket.emit('musicData', { ...currentMusic, position: adjustedPosition });
+        }
     }
+
+    // Rattrapage message en attente (persiste après refresh)
+    if (pendingMessage) {
+        socket.emit('popupMessage', pendingMessage);
+    }
+
+    // Le client signale que le message a été fermé → on l'efface
+    socket.on('dismissMessage', () => {
+        pendingMessage = null;
+        // Propager la fermeture à tous les autres écrans ouverts
+        socket.broadcast.emit('dismissMessage');
+    });
 });
 
 // ──────────────────────────────────────────────

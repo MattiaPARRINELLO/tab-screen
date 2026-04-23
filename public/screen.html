@@ -1603,9 +1603,97 @@
         animation-play-state: paused !important;
         transition: none !important;
       }
+
+      /* ========== POPUP MESSAGE ========== */
+      #messageOverlay {
+        position: fixed;
+        inset: 0;
+        z-index: 1000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem;
+        background: rgba(0, 0, 0, 0.55);
+        backdrop-filter: blur(8px);
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+      }
+
+      #messageOverlay.visible {
+        opacity: 1;
+        pointer-events: all;
+        cursor: pointer;
+      }
+
+      #messageBox {
+        background: rgba(18, 22, 34, 0.92);
+        backdrop-filter: blur(24px) saturate(1.4);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 2rem;
+        padding: 2.5rem 3rem;
+        max-width: 560px;
+        width: 100%;
+        box-shadow:
+          0 32px 80px rgba(0, 0, 0, 0.6),
+          0 0 0 1px rgba(255, 255, 255, 0.04) inset;
+        transform: scale(0.88) translateY(20px);
+        transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+        text-align: center;
+      }
+
+      #messageOverlay.visible #messageBox {
+        transform: scale(1) translateY(0);
+      }
+
+      #messageEmoji {
+        font-size: 2.8rem;
+        margin-bottom: 1rem;
+        animation: popIn 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+      }
+
+      @keyframes popIn {
+        from { transform: scale(0.5); opacity: 0; }
+        to   { transform: scale(1);   opacity: 1; }
+      }
+
+      #messageFrom {
+        font-size: 0.78rem;
+        font-weight: 600;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: #a78bfa;
+        margin-bottom: 1rem;
+      }
+
+      #messageText {
+        font-size: 1.25rem;
+        font-weight: 400;
+        line-height: 1.65;
+        color: #eef2f7;
+        white-space: pre-wrap;
+        word-break: break-word;
+      }
+
+      #messageDismiss {
+        margin-top: 1.75rem;
+        font-size: 0.78rem;
+        color: #3d4a5c;
+        letter-spacing: 0.04em;
+      }
     </style>
   </head>
   <body>
+    <!-- Popup message -->
+    <div id="messageOverlay" role="dialog" aria-modal="true" aria-labelledby="messageText">
+      <div id="messageBox">
+        <div id="messageEmoji">💌</div>
+        <div id="messageFrom">Un message pour toi</div>
+        <div id="messageText"></div>
+        <div id="messageDismiss">Appuie n'importe où pour fermer</div>
+      </div>
+    </div>
+
     <div class="album-color-wash" id="albumColorWash"></div>
     <div class="bg-orb bg-orb-1" id="bgOrb1" aria-hidden="true"></div>
     <div class="bg-orb bg-orb-2" id="bgOrb2" aria-hidden="true"></div>
@@ -2605,6 +2693,32 @@
         }, 250); // slower updates to save CPU on low-power devices
       }
 
+      // ── Popup message ──────────────────────────────
+      const messageOverlay = document.getElementById("messageOverlay");
+      const messageText    = document.getElementById("messageText");
+
+      function showPopupMessage(text) {
+        messageText.textContent = text;
+        messageOverlay.classList.add("visible");
+      }
+
+      function dismissPopupMessage() {
+        if (!messageOverlay.classList.contains("visible")) return;
+        messageOverlay.classList.remove("visible");
+        socket.emit("dismissMessage");
+      }
+
+      messageOverlay.addEventListener("click", dismissPopupMessage);
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" || e.key === " " || e.key === "Enter") {
+          dismissPopupMessage();
+        }
+      });
+
+      socket.on("popupMessage", ({ text }) => showPopupMessage(text));
+      socket.on("dismissMessage", () => messageOverlay.classList.remove("visible"));
+
+      // ── Musique ────────────────────────────────────
       // Les events peuvent arriver en rafale (sans cover puis avec cover).
       // On les traite séquentiellement pour éviter qu'un ancien event
       // réécrase la cover déjà mise à jour par un event plus récent.

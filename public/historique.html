@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Historique des messages</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+
+      body {
+        min-height: 100vh;
+        background: #07090f;
+        font-family: "Inter", system-ui, sans-serif;
+        -webkit-font-smoothing: antialiased;
+        color: #eef2f7;
+        padding: 2rem 1.5rem 4rem;
+      }
+
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        background:
+          radial-gradient(ellipse 60% 50% at 15% 15%, rgba(167, 139, 250, 0.07) 0%, transparent 70%),
+          radial-gradient(ellipse 50% 40% at 85% 85%, rgba(78, 205, 196, 0.05) 0%, transparent 70%);
+        pointer-events: none;
+      }
+
+      .container {
+        position: relative;
+        max-width: 680px;
+        margin: 0 auto;
+      }
+
+      header {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 2.5rem;
+      }
+
+      header h1 {
+        font-size: 1.4rem;
+        font-weight: 600;
+        color: #eef2f7;
+      }
+
+      header .count {
+        font-size: 0.78rem;
+        font-weight: 500;
+        background: rgba(167, 139, 250, 0.15);
+        color: #a78bfa;
+        border-radius: 2rem;
+        padding: 0.2rem 0.7rem;
+      }
+
+      .empty {
+        text-align: center;
+        color: #3d4a5c;
+        padding: 4rem 0;
+        font-size: 1rem;
+      }
+
+      .empty span { display: block; font-size: 2.5rem; margin-bottom: 1rem; }
+
+      .list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+      }
+
+      .msg-card {
+        background: rgba(15, 19, 28, 0.8);
+        backdrop-filter: blur(16px);
+        border: 1px solid rgba(255, 255, 255, 0.07);
+        border-radius: 1.25rem;
+        padding: 1.25rem 1.5rem;
+        animation: fadeIn 0.3s ease both;
+      }
+
+      @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(8px); }
+        to   { opacity: 1; transform: translateY(0); }
+      }
+
+      .msg-meta {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin-bottom: 0.65rem;
+        flex-wrap: wrap;
+      }
+
+      .msg-date {
+        font-size: 0.78rem;
+        font-weight: 500;
+        color: #a78bfa;
+      }
+
+      .msg-ip {
+        font-size: 0.72rem;
+        color: #3d4a5c;
+        font-family: "SF Mono", "Fira Code", monospace;
+        background: rgba(255, 255, 255, 0.04);
+        border-radius: 0.4rem;
+        padding: 0.1rem 0.45rem;
+      }
+
+      .msg-text {
+        font-size: 1rem;
+        line-height: 1.6;
+        color: #d1d9e6;
+        white-space: pre-wrap;
+        word-break: break-word;
+      }
+
+      .refresh-btn {
+        position: fixed;
+        bottom: 1.5rem;
+        right: 1.5rem;
+        background: rgba(167, 139, 250, 0.18);
+        border: 1px solid rgba(167, 139, 250, 0.3);
+        color: #a78bfa;
+        font-family: inherit;
+        font-size: 0.82rem;
+        font-weight: 500;
+        padding: 0.55rem 1.1rem;
+        border-radius: 2rem;
+        cursor: pointer;
+        transition: background 0.18s;
+      }
+
+      .refresh-btn:hover { background: rgba(167, 139, 250, 0.28); }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <h1>💌 Historique</h1>
+        <span class="count" id="count">0 message</span>
+      </header>
+      <div id="list" class="list"></div>
+    </div>
+
+    <button class="refresh-btn" id="refreshBtn">↻ Actualiser</button>
+
+    <script>
+      const listEl  = document.getElementById("list");
+      const countEl = document.getElementById("count");
+
+      function formatDate(ts) {
+        const d = new Date(ts);
+        return d.toLocaleDateString("fr-FR", {
+          weekday: "short", day: "numeric", month: "short", year: "numeric",
+        }) + " à " + d.toLocaleTimeString("fr-FR", {
+          hour: "2-digit", minute: "2-digit", second: "2-digit",
+        });
+      }
+
+      async function load() {
+        try {
+          const res  = await fetch("/api/messages");
+          const msgs = await res.json();
+
+          countEl.textContent = msgs.length === 0
+            ? "0 message"
+            : msgs.length === 1 ? "1 message" : `${msgs.length} messages`;
+
+          if (msgs.length === 0) {
+            listEl.innerHTML = `<div class="empty"><span>💬</span>Aucun message pour l'instant</div>`;
+            return;
+          }
+
+          listEl.innerHTML = msgs.map((m, i) => `
+            <div class="msg-card" style="animation-delay:${i * 30}ms">
+              <div class="msg-meta">
+                <span class="msg-date">${formatDate(m.sentAt)}</span>
+                ${m.ip ? `<span class="msg-ip">${escHtml(m.ip)}</span>` : ""}
+              </div>
+              <div class="msg-text">${escHtml(m.text)}</div>
+            </div>
+          `).join("");
+        } catch {
+          listEl.innerHTML = `<div class="empty"><span>⚠️</span>Impossible de charger l'historique</div>`;
+        }
+      }
+
+      function escHtml(str) {
+        return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+      }
+
+      document.getElementById("refreshBtn").addEventListener("click", load);
+      load();
+    </script>
+  </body>
+</html>

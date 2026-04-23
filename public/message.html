@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Envoyer un message</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+
+      body {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #07090f;
+        font-family: "Inter", system-ui, sans-serif;
+        -webkit-font-smoothing: antialiased;
+        padding: 1.5rem;
+      }
+
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        background:
+          radial-gradient(ellipse 70% 60% at 20% 20%, rgba(167, 139, 250, 0.08) 0%, transparent 70%),
+          radial-gradient(ellipse 60% 50% at 80% 80%, rgba(78, 205, 196, 0.06) 0%, transparent 70%);
+        pointer-events: none;
+      }
+
+      .card {
+        position: relative;
+        width: 100%;
+        max-width: 480px;
+        background: rgba(15, 19, 28, 0.85);
+        backdrop-filter: blur(24px) saturate(1.4);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 2rem;
+        padding: 2.5rem;
+        box-shadow: 0 24px 64px rgba(0, 0, 0, 0.5);
+      }
+
+      .heart {
+        text-align: center;
+        font-size: 2.2rem;
+        margin-bottom: 1.25rem;
+        animation: pulse 2.4s ease-in-out infinite;
+      }
+
+      @keyframes pulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.12); }
+      }
+
+      h1 {
+        color: #eef2f7;
+        font-size: 1.3rem;
+        font-weight: 600;
+        text-align: center;
+        margin-bottom: 0.4rem;
+      }
+
+      .subtitle {
+        color: #5a6678;
+        font-size: 0.82rem;
+        text-align: center;
+        margin-bottom: 2rem;
+      }
+
+      textarea {
+        width: 100%;
+        min-height: 140px;
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 1.1rem;
+        color: #eef2f7;
+        font-family: inherit;
+        font-size: 1rem;
+        line-height: 1.6;
+        padding: 1rem 1.2rem;
+        resize: vertical;
+        outline: none;
+        transition: border-color 0.2s, background 0.2s;
+      }
+
+      textarea::placeholder { color: #3d4a5c; }
+
+      textarea:focus {
+        border-color: rgba(167, 139, 250, 0.4);
+        background: rgba(255, 255, 255, 0.06);
+      }
+
+      .counter {
+        text-align: right;
+        font-size: 0.75rem;
+        color: #3d4a5c;
+        margin-top: 0.4rem;
+        margin-bottom: 1.5rem;
+        transition: color 0.2s;
+      }
+
+      .counter.warn { color: #f59e0b; }
+
+      button {
+        width: 100%;
+        padding: 0.9rem;
+        background: linear-gradient(135deg, #a78bfa, #4ecdc4);
+        border: none;
+        border-radius: 1.1rem;
+        color: #fff;
+        font-family: inherit;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        letter-spacing: 0.01em;
+        transition: opacity 0.18s, transform 0.18s;
+      }
+
+      button:hover:not(:disabled) { opacity: 0.88; transform: translateY(-1px); }
+      button:active:not(:disabled) { transform: translateY(0); }
+      button:disabled { opacity: 0.4; cursor: default; }
+
+      .feedback {
+        margin-top: 1.1rem;
+        text-align: center;
+        font-size: 0.9rem;
+        font-weight: 500;
+        min-height: 1.3em;
+        transition: opacity 0.3s;
+      }
+
+      .feedback.success { color: #4ecdc4; }
+      .feedback.error   { color: #f87171; }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <div class="heart">💌</div>
+      <h1>Envoyer un message</h1>
+      <p class="subtitle">Il apparaîtra sur l'écran</p>
+
+      <textarea id="msg" placeholder="Écris ton message ici…" maxlength="500" autofocus></textarea>
+      <div class="counter" id="counter">0 / 500</div>
+
+      <button id="btn" type="button">Envoyer</button>
+      <div class="feedback" id="feedback"></div>
+    </div>
+
+    <script>
+      const textarea = document.getElementById("msg");
+      const counter  = document.getElementById("counter");
+      const btn      = document.getElementById("btn");
+      const feedback = document.getElementById("feedback");
+
+      textarea.addEventListener("input", () => {
+        const len = textarea.value.length;
+        counter.textContent = `${len} / 500`;
+        counter.classList.toggle("warn", len > 400);
+      });
+
+      btn.addEventListener("click", async () => {
+        const text = textarea.value.trim();
+        if (!text) return;
+
+        btn.disabled = true;
+        feedback.textContent = "";
+        feedback.className = "feedback";
+
+        try {
+          const res = await fetch("/api/message", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ text }),
+          });
+
+          if (res.ok) {
+            feedback.textContent = "Message envoyé ✓";
+            feedback.className = "feedback success";
+            textarea.value = "";
+            counter.textContent = "0 / 500";
+          } else {
+            const err = await res.json();
+            feedback.textContent = err.error || "Erreur lors de l'envoi";
+            feedback.className = "feedback error";
+          }
+        } catch {
+          feedback.textContent = "Impossible de joindre le serveur";
+          feedback.className = "feedback error";
+        } finally {
+          btn.disabled = false;
+        }
+      });
+
+      textarea.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) btn.click();
+      });
+    </script>
+  </body>
+</html>
