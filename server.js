@@ -119,8 +119,31 @@ function saveMessages(msgs) {
     } catch (e) { console.error('[messages] Erreur écriture:', e.message); }
 }
 
-let pendingMessage  = null;
-let messageHistory  = loadMessages();
+function normalizeMessageHistory(msgs) {
+    let hasActiveMessage = false;
+    let changed = false;
+
+    const normalized = msgs.map((msg) => {
+        if (msg.dismissedAt) return msg;
+
+        if (!hasActiveMessage) {
+            hasActiveMessage = true;
+            return msg;
+        }
+
+        changed = true;
+        return { ...msg, dismissedAt: msg.sentAt || Date.now() };
+    });
+
+    return { normalized, changed };
+}
+
+let messageHistory = loadMessages();
+const normalizedMessages = normalizeMessageHistory(messageHistory);
+messageHistory = normalizedMessages.normalized;
+if (normalizedMessages.changed) saveMessages(messageHistory);
+
+let pendingMessage = messageHistory.find((msg) => !msg.dismissedAt) || null;
 
 app.post('/api/message', (req, res) => {
     const text = (req.body.text || '').trim();
@@ -130,9 +153,11 @@ app.post('/api/message', (req, res) => {
     const ip = (req.headers['x-forwarded-for'] || req.socket.remoteAddress || '').split(',')[0].trim();
     const entry = { text, sentAt: Date.now(), ip };
 
+    if (pendingMessage && !pendingMessage.dismissedAt) {
+        pendingMessage.dismissedAt = Date.now();
+    }
     pendingMessage = entry;
     messageHistory.unshift(entry);          // plus récent en premier
-    if (messageHistory.length > 200) messageHistory = messageHistory.slice(0, 200);
     saveMessages(messageHistory);
 
     io.emit('popupMessage', pendingMessage);
@@ -339,6 +364,10 @@ io.on('connection', socket => {
 
     // Le client signale que le message a été fermé → on l'efface
     socket.on('dismissMessage', () => {
+        if (pendingMessage && !pendingMessage.dismissedAt) {
+            pendingMessage.dismissedAt = Date.now();
+            saveMessages(messageHistory);
+        }
         pendingMessage = null;
         // Propager la fermeture à tous les autres écrans ouverts
         socket.broadcast.emit('dismissMessage');
