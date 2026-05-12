@@ -99,7 +99,7 @@
         --duration-normal: 0.4s;
         --duration-slow: 0.85s;
         --fx-overscan: 22vmax;
-        --theme-transition: 1.2s;
+        --theme-transition: 600ms;
         --cover-fade-half: 0.6s;
         --theme-ease: cubic-bezier(0.22, 0.88, 0.26, 1);
 
@@ -978,7 +978,7 @@
         border-radius: 4px;
         width: 0%;
         transition:
-          width 200ms linear,
+          width 300ms cubic-bezier(0.34, 1.56, 0.64, 1),
           background var(--theme-transition) var(--ease-smooth);
         box-shadow:
           0 0 12px rgba(var(--album-r), var(--album-g), var(--album-b), 0.6),
@@ -2688,6 +2688,81 @@
       let coverSwapTimeout = null;
       let coverSwapToken = 0;
 
+      // ========== TRANSITION ORCHESTRATOR ==========
+      let activeTimelineId = 0;
+
+      function createTimeline() {
+        const id = ++activeTimelineId;
+        const phases = [];
+
+        return {
+          phase(name, delayMs, durationMs, callback) {
+            phases.push({ name, delayMs, durationMs, callback });
+            return this;
+          },
+          play() {
+            const maxEnd = phases.reduce((max, p) => {
+              const end = p.delayMs + p.durationMs;
+              return end > max ? end : max;
+            }, 0);
+            phases.forEach((p) => {
+              setTimeout(() => {
+                if (activeTimelineId !== id) return;
+                try { p.callback(); } catch (e) {}
+              }, p.delayMs);
+            });
+            return new Promise((resolve) => {
+              setTimeout(() => {
+                if (activeTimelineId === id) activeTimelineId = 0;
+                resolve();
+              }, maxEnd);
+            });
+          }
+        };
+      }
+
+      function canAnimateSongChange() {
+        const prefersReduced = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        return !prefersReduced && !musicCard.classList.contains("hidden") && PERF.tier < 4;
+      }
+
+      function glideProgressBar(fromPct, toPct, durationMs) {
+        if (PERF.tier >= 4) {
+          progressBar.style.width = `${toPct}%`;
+          return;
+        }
+        const start = performance.now();
+        function step() {
+          const elapsed = performance.now() - start;
+          const t = Math.min(elapsed / durationMs, 1);
+          const eased = 1 - Math.pow(1 - t, 3); // ease-out cubic
+          const current = fromPct + (toPct - fromPct) * eased;
+          progressBar.style.width = `${current}%`;
+          if (t < 1) requestAnimationFrame(step);
+        }
+        requestAnimationFrame(step);
+      }
+
+      function pulseElement(el, times, durationMs) {
+        if (!el || PERF.tier >= 4) return;
+        const start = performance.now();
+        const period = durationMs / times;
+        function step() {
+          const elapsed = performance.now() - start;
+          if (elapsed >= durationMs) {
+            el.style.transform = '';
+            el.style.opacity = '1';
+            return;
+          }
+          const phase = (elapsed % period) / period;
+          const s = 1 + 1.5 * Math.sin(phase * Math.PI * 2) * (1 - elapsed / durationMs);
+          el.style.transform = `scale(${s})`;
+          el.style.opacity = `${0.4 + 0.6 * (1 - elapsed / durationMs)}`;
+          requestAnimationFrame(step);
+        }
+        requestAnimationFrame(step);
+      }
+
       // ========== COLOR INTELLIGENCE ==========
 
       function rgbToHsl(r, g, b) {
@@ -3144,8 +3219,7 @@
           clearDeferredCoverFallback();
         }
 
-        // Même morceau déjà visible = le serveur nous envoie juste la cover.
-        // Mise à jour silencieuse : on ne touche ni paroles, ni timers, ni animations.
+        // Même morceau déjà visible : cover ET/OU synchronisation position
         if (!isSongChanged && !musicCard.classList.contains("hidden")) {
           if (data.cover) {
             setCoverWithFallback(data.cover, { songKey: nextSongKey });
@@ -3159,6 +3233,51 @@
               } catch (e) {}
             };
           }
+
+          // Si la position a changé significativement (> 2 sec), resynchroniser
+          const newPos = Number(data.position) || 0;
+          const newDur = Number(data.duration) || 0;
+          const elapsed = (Date.now() - musicStartTime) / 1000;
+          const currentPos = musicInitialPosition + elapsed;
+          const needsResync = Math.abs(currentPos - newPos) > 2;
+
+          if (needsResync) {
+            if (musicTimeout) clearTimeout(musicTimeout);
+            const prevProgress = parseFloat(progressBar.style.width) || 0;
+            const newProgress = musicDuration > 0 ? (newPos / musicDuration) * 100 : 0;
+
+            musicInitialPosition = newPos;
+            musicDuration = newDur || musicDuration;
+            musicStartTime = Date.now();
+            if (musicDurationEl) musicDurationEl.textContent = formatTime(musicDuration);
+
+            if (lyricsInterval) {
+              clearInterval(lyricsInterval);
+              lyricsInterval = null;
+            }
+
+            // positionJump timeline: pulse bar → glide lyrics → glide bar to new position
+            createTimeline()
+              .phase('bar_pulse', 0, 300, () => {
+                pulseElement(progressBar, 2, 300);
+              })
+              .phase('lyrics_glide', 100, 300, () => {
+                // lyrics will re-sync when startLyricsSync fires
+              })
+              .phase('bar_glide', 200, 300, () => {
+                glideProgressBar(prevProgress, newProgress, 300);
+              })
+              .play();
+
+            startProgressInterval();
+            if (currentLyrics.length > 0) startLyricsSync();
+
+            const remaining = musicDuration - newPos;
+            if (remaining > 0) {
+              musicTimeout = setTimeout(hideMusicCard, remaining * 1000);
+            }
+          }
+
           return;
         }
 
@@ -3182,15 +3301,57 @@
         if (musicDurationEl)
           musicDurationEl.textContent = formatTime(musicDuration);
 
-        await animateSongChangeIfNeeded(isSongChanged, () => {
-          // Update music info
+        // --- songChange timeline ---
+        if (isSongChanged && canAnimateSongChange()) {
+          const prevProgress = parseFloat(progressBar.style.width) || 0;
+
+          const staggerTargets = [
+            { el: lyricsContainer, delayOut: 0, delayIn: 60 },
+            { el: coverEl, delayOut: 30, delayIn: 0 },
+            { el: trackEl, delayOut: 50, delayIn: 30 },
+            { el: artistEl, delayOut: 65, delayIn: 50 },
+            { el: musicBottomEl.querySelector(".music-progress-row"), delayOut: 80, delayIn: 70 },
+          ].filter((t) => t.el);
+
+          await createTimeline()
+            .phase('content_out', 0, 250, () => {
+              staggerTargets.forEach((t) => {
+                t.el.animate(
+                  [
+                    { opacity: 1, transform: "translateY(0) scale(1)", filter: "blur(0)" },
+                    { opacity: 0, transform: "translateY(8px) scale(0.98)", filter: PERF.tier >= 3 ? "blur(2px)" : "blur(4px)" },
+                  ],
+                  { duration: 220, delay: t.delayOut, easing: "cubic-bezier(0.4, 0, 0.2, 1)", fill: "forwards" }
+                );
+              });
+            })
+            .phase('color_shift', 150, 400, () => {
+              // CSS --theme-transition handles color morph automatically
+            })
+            .phase('progress_glide', 250, 200, () => {
+              glideProgressBar(prevProgress, 0, 200);
+            })
+            .phase('content_in', 300, 500, () => {
+              trackEl.textContent = data.title || "Titre inconnu";
+              artistEl.textContent = data.artist || "Artiste inconnu";
+              setCoverWithFallback(data.cover, { preserveExistingOnMissing: true, songKey: nextSongKey });
+
+              staggerTargets.forEach((t) => {
+                t.el.animate(
+                  [
+                    { opacity: 0, transform: "translateY(-12px) scale(0.97)", filter: PERF.tier >= 3 ? "blur(2px)" : "blur(4px)" },
+                    { opacity: 1, transform: "translateY(0) scale(1)", filter: "blur(0)" },
+                  ],
+                  { duration: 420, delay: t.delayIn, easing: "cubic-bezier(0.22, 1, 0.36, 1)", fill: "both" }
+                );
+              });
+            })
+            .play();
+        } else if (isSongChanged) {
           trackEl.textContent = data.title || "Titre inconnu";
           artistEl.textContent = data.artist || "Artiste inconnu";
-          setCoverWithFallback(data.cover, {
-            preserveExistingOnMissing: true,
-            songKey: nextSongKey,
-          });
-        });
+          setCoverWithFallback(data.cover, { preserveExistingOnMissing: true, songKey: nextSongKey });
+        }
 
         // Fetch and display lyrics (async, timing vars already set)
         fetchLyrics(data.title, data.artist, data.album).then(
@@ -3245,23 +3406,20 @@
       }
 
       function hideMusicCard() {
-        // Graceful fade-out before hiding
-        const prefersReducedMotion =
-          window.matchMedia &&
-          window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-
         clearDeferredCoverFallback();
         clearCoverSwapState();
 
         if (progressInterval) clearInterval(progressInterval);
         stopLyricsSync();
-        document.body.classList.remove("music-theme-active");
-        albumColorWash.classList.remove("active");
-        document
-          .querySelectorAll(".bg-orb")
-          .forEach((orb) => orb.classList.remove("active"));
+
+        const prefersReducedMotion =
+          window.matchMedia &&
+          window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
         if (prefersReducedMotion || musicCard.classList.contains("hidden") || PERF.tier >= 4) {
+          document.body.classList.remove("music-theme-active");
+          albumColorWash.classList.remove("active");
+          document.querySelectorAll(".bg-orb").forEach((orb) => orb.classList.remove("active"));
           musicCard.classList.add("hidden");
           progressBar.style.width = "0%";
           if (musicDurationEl) musicDurationEl.textContent = "0:00";
@@ -3269,28 +3427,45 @@
           return;
         }
 
-        const fadeOut = musicCard.animate(
-          [
-            { opacity: 1, transform: "scale(1)", filter: "blur(0)" },
-            { opacity: 0, transform: "scale(0.96)", filter: "blur(6px)" },
-          ],
-          {
-            duration: 500,
-            easing: "cubic-bezier(0.4, 0, 0.2, 1)",
-            fill: "forwards",
-          },
-        );
+        // cardHide timeline: ambiance recedes → content fades → card disappears
+        createTimeline()
+          .phase('wash_out', 0, 300, () => {
+            albumColorWash.classList.remove("active");
+            document.querySelectorAll(".bg-orb").forEach((orb) => orb.classList.remove("active"));
+            document.body.classList.remove("music-theme-active");
+          })
+          .phase('content_out', 150, 250, () => {
+            const targets = [
+              { el: musicBottomEl.querySelector(".music-progress-row"), delay: 0 },
+              { el: artistEl, delay: 30 },
+              { el: trackEl, delay: 60 },
+              { el: coverEl, delay: 90 },
+            ].filter((t) => t.el);
 
-        fadeOut.finished
+            targets.forEach((t) => {
+              t.el.animate(
+                [
+                  { opacity: 1, transform: "translateY(0) scale(1)", filter: "blur(0)" },
+                  { opacity: 0, transform: "translateY(8px) scale(0.98)", filter: "blur(4px)" },
+                ],
+                { duration: 220, delay: t.delay, easing: "cubic-bezier(0.4, 0, 0.2, 1)", fill: "forwards" }
+              );
+            });
+          })
+          .phase('card_fade', 350, 250, () => {
+            musicCard.animate(
+              [
+                { opacity: 1, transform: "scale(1)", filter: "blur(0)" },
+                { opacity: 0, transform: "scale(0.96)", filter: "blur(6px)" },
+              ],
+              { duration: 250, easing: "cubic-bezier(0.4, 0, 1, 1)", fill: "forwards" }
+            );
+          })
+          .play()
           .then(() => {
             musicCard.classList.add("hidden");
-            fadeOut.cancel();
             progressBar.style.width = "0%";
             if (musicDurationEl) musicDurationEl.textContent = "0:00";
-            updateForecastLayout();
-          })
-          .catch(() => {
-            musicCard.classList.add("hidden");
             updateForecastLayout();
           });
       }
