@@ -184,6 +184,7 @@
         z-index: 0;
         pointer-events: none;
         opacity: 0.038;
+        transition: opacity 0.4s ease;
         background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)'/%3E%3C/svg%3E");
         background-size: 300px 300px;
       }
@@ -388,6 +389,10 @@
         border: 1px solid rgba(255, 255, 255, 0.06);
         border-radius: var(--radius-lg);
         padding: var(--gap-lg);
+        transition:
+          backdrop-filter 0.8s ease,
+          -webkit-backdrop-filter 0.8s ease,
+          box-shadow 0.8s ease;
         box-shadow:
           var(--shadow-md),
           0 1px 0 rgba(255, 255, 255, 0.05) inset,
@@ -1608,7 +1613,7 @@
 
       /* Tier 1 — disable grain, reduce backdrop-filter, stop ambient */
       body.perf-tier-1::after {
-        display: none;
+        opacity: 0;
       }
 
       body.perf-tier-1 .card {
@@ -1628,7 +1633,8 @@
 
       body.perf-tier-2 #bgOrb2,
       body.perf-tier-2 #bgOrb3 {
-        display: none;
+        opacity: 0 !important;
+        pointer-events: none;
       }
 
       body.perf-tier-2 #bgOrb1 {
@@ -1644,7 +1650,8 @@
 
       /* Tier 3 — hide all orbs, disable decorative animations, instant transitions */
       body.perf-tier-3 .bg-orb {
-        display: none;
+        opacity: 0 !important;
+        pointer-events: none;
       }
 
       body.perf-tier-3 .album-color-wash.active {
@@ -1702,7 +1709,7 @@
       body.perf-tier-4 .card::before,
       body.perf-tier-4 .card::after,
       body.perf-tier-4 .music-cover-wrapper::after {
-        display: none;
+        opacity: 0;
       }
 
       body.perf-tier-4 .card {
