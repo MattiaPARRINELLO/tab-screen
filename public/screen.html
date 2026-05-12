@@ -1604,6 +1604,207 @@
         transition: none !important;
       }
 
+      /* ========== PERFORMANCE TIERS ========== */
+
+      /* Tier 1 — disable grain, reduce backdrop-filter, stop ambient */
+      body.perf-tier-1::after {
+        display: none;
+      }
+
+      body.perf-tier-1 .card {
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+      }
+
+      body.perf-tier-1::before {
+        animation: none;
+      }
+
+      /* Tier 2 — remove backdrop-filter, hide orbs 2 & 3, reduce orb 1 blur */
+      body.perf-tier-2 .card {
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+      }
+
+      body.perf-tier-2 #bgOrb2,
+      body.perf-tier-2 #bgOrb3 {
+        display: none;
+      }
+
+      body.perf-tier-2 #bgOrb1 {
+        filter: blur(40px);
+      }
+
+      /* Override responsive tweaks that set blur on orbs */
+      @media (max-width: 1280px), (max-height: 800px) {
+        body.perf-tier-2 #bgOrb1 {
+          filter: blur(30px);
+        }
+      }
+
+      /* Tier 3 — hide all orbs, disable decorative animations, instant transitions */
+      body.perf-tier-3 .bg-orb {
+        display: none;
+      }
+
+      body.perf-tier-3 .album-color-wash.active {
+        animation: none;
+      }
+
+      body.perf-tier-3 .music-cover {
+        animation: none;
+      }
+
+      body.perf-tier-3 .weather-icon {
+        animation: none;
+      }
+
+      body.perf-tier-3 .time-display {
+        animation: none;
+      }
+
+      body.perf-tier-3 .card:not(.hidden):not(#musicCard) {
+        animation:
+          cardEnter var(--duration-slow) var(--ease-spring) forwards;
+      }
+
+      body.perf-tier-3 .forecast-header::before {
+        animation: none;
+      }
+
+      body.perf-tier-3 .lyrics-prestart-dot,
+      body.perf-tier-3 .lyrics-prestart::before {
+        animation: none;
+      }
+
+      body.perf-tier-3 .lyrics-loading-spinner {
+        animation: none;
+      }
+
+      /* Cover pulse static at tier 3 */
+      body.perf-tier-3 .music-cover {
+        transform: scale(1);
+      }
+
+      /* Tier 4 — strip will-change hints, no-op all remaining decorative animations */
+      body.perf-tier-4 .album-color-wash,
+      body.perf-tier-4 .bg-orb,
+      body.perf-tier-4 .card,
+      body.perf-tier-4 .music-cover,
+      body.perf-tier-4 .lyrics-wrapper,
+      body.perf-tier-4 .music-bottom {
+        will-change: auto;
+      }
+
+      body.perf-tier-4 .album-color-wash,
+      body.perf-tier-4 .card::before,
+      body.perf-tier-4 .card::after,
+      body.perf-tier-4 .music-cover-wrapper::after {
+        display: none;
+      }
+
+      body.perf-tier-4 .card {
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+      }
+
+      body.perf-tier-4 #musicCard {
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+      }
+
+      /* ========== PERF TOGGLE BUTTON ========== */
+      #perfToggleButton {
+        position: fixed;
+        bottom: 12px;
+        right: 12px;
+        z-index: 9999;
+        background: rgba(15, 19, 28, 0.6);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 10px;
+        color: var(--text-muted);
+        font-size: 0.9rem;
+        width: 34px;
+        height: 34px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        opacity: 0.18;
+        transition: opacity 0.3s, color 0.3s;
+        user-select: none;
+        -webkit-user-select: none;
+        font-family: "Inter", -apple-system, sans-serif;
+        line-height: 1;
+        padding: 0;
+      }
+
+      #perfToggleButton:hover {
+        opacity: 1;
+        color: var(--text-secondary);
+      }
+
+      #perfToggleButton.manual-active {
+        opacity: 1;
+        color: rgba(var(--album-r), var(--album-g), var(--album-b), 0.8);
+      }
+
+      /* ========== SUGGESTION BANNER ========== */
+      #perfBanner {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 9998;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 10px 20px;
+        background: rgba(15, 19, 28, 0.92);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+        gap: 12px;
+        animation: bannerSlideDown 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+      }
+
+      #perfBanner.visible {
+        display: flex;
+      }
+
+      #perfBanner a {
+        color: rgba(var(--album-r), var(--album-g), var(--album-b), 0.9);
+        font-weight: 600;
+        text-decoration: none;
+        border-bottom: 1px solid rgba(var(--album-r), var(--album-g), var(--album-b), 0.3);
+        transition: border-color 0.2s;
+      }
+
+      #perfBanner a:hover {
+        border-color: rgba(var(--album-r), var(--album-g), var(--album-b), 0.7);
+      }
+
+      #perfBannerDismiss {
+        background: none;
+        border: none;
+        color: var(--text-muted);
+        cursor: pointer;
+        font-size: 1.1rem;
+        line-height: 1;
+        padding: 2px 6px;
+        border-radius: 4px;
+        transition: color 0.2s;
+      }
+
+      #perfBannerDismiss:hover {
+        color: var(--text-secondary);
+      }
+
+      @keyframes bannerSlideDown {
+        from { transform: translateY(-100%); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
+      }
+
       /* ========== POPUP MESSAGE ========== */
       #messageOverlay {
         position: fixed;
