@@ -2436,6 +2436,11 @@
        * entre mode paroles et mode plein écran.
        */
       function animateMusicMorphTransition(enabled) {
+        if (PERF.tier >= 4) {
+          musicCard.classList.toggle("fullscreen-mode", enabled);
+          return;
+        }
+
         const elements = [
           musicCard,
           lyricsContainer,
@@ -2616,7 +2621,7 @@
           const currentTime =
             musicInitialPosition + elapsed + (config.lyricsDelaySeconds || 0);
           updateActiveLyric(currentTime);
-        }, 250);
+        }, perfInterval(250));
       }
 
       /**
@@ -2785,6 +2790,20 @@
       }
 
       function applyAlbumColors(img) {
+        if (PERF.tier >= 4) {
+          const root = document.documentElement;
+          root.style.setProperty("--album-r", "78");
+          root.style.setProperty("--album-g", "205");
+          root.style.setProperty("--album-b", "196");
+          root.style.setProperty("--album-ar", "167");
+          root.style.setProperty("--album-ag", "139");
+          root.style.setProperty("--album-ab", "250");
+          document.body.classList.add("music-theme-active");
+          albumColorWash.classList.add("active");
+          document.querySelectorAll(".bg-orb").forEach(function(o) { o.classList.add("active"); });
+          return;
+        }
+
         const colorThief = new ColorThief();
         const palette = colorThief.getPalette(img, 8, 1);
 
@@ -2965,7 +2984,7 @@
           !prefersReducedMotion &&
           !musicCard.classList.contains("hidden");
 
-        if (!canAnimate) {
+        if (!canAnimate || PERF.tier >= 4) {
           applyUpdate();
           return;
         }
@@ -2995,7 +3014,7 @@
               {
                 opacity: 0,
                 transform: "translateY(8px) scale(0.98)",
-                filter: "blur(4px)",
+                filter: PERF.tier >= 3 ? "blur(2px)" : "blur(4px)",
               },
             ],
             {
@@ -3021,7 +3040,7 @@
               {
                 opacity: 0,
                 transform: "translateY(-12px) scale(0.97)",
-                filter: "blur(4px)",
+                filter: PERF.tier >= 3 ? "blur(2px)" : "blur(4px)",
               },
               {
                 opacity: 1,
@@ -3057,7 +3076,7 @@
             clearInterval(progressInterval);
             hideMusicCard();
           }
-        }, 250); // slower updates to save CPU on low-power devices
+        }, perfInterval(250));
       }
 
       // ── Popup message ──────────────────────────────
@@ -3222,7 +3241,7 @@
           .querySelectorAll(".bg-orb")
           .forEach((orb) => orb.classList.remove("active"));
 
-        if (prefersReducedMotion || musicCard.classList.contains("hidden")) {
+        if (prefersReducedMotion || musicCard.classList.contains("hidden") || PERF.tier >= 4) {
           musicCard.classList.add("hidden");
           progressBar.style.width = "0%";
           if (musicDurationEl) musicDurationEl.textContent = "0:00";
@@ -3316,6 +3335,7 @@
       window.addEventListener("resize", applyNoPanForTablet);
 
       init();
+      perfInit();
     </script>
   </body>
 </html>
