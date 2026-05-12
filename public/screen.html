@@ -1976,6 +1976,165 @@
     <script>
       const socket = io();
 
+      // ========== PERFORMANCE TIER SYSTEM ==========
+
+      const PERF = {
+        tier: 0,
+        fpsHistory: [],
+        lastTierChange: 0,
+        manualOverride: false,
+        manualTimer: null,
+        lowFpsStart: 0,
+        highFpsStart: 0,
+        initTime: Date.now(),
+        bannerShown: false,
+        DESCENT_COOLDOWN: 10000,
+        ASCENT_COOLDOWN: 15000,
+        MANUAL_TIMEOUT: 60000,
+      };
+
+      function perfInit() {
+        const isLowEndRoute = window.location.pathname === '/screen/low-end';
+        perfSetTier(isLowEndRoute ? 3 : 0);
+        perfStartFpsMonitor();
+        perfBindToggle();
+      }
+
+      function perfSetTier(newTier) {
+        if (newTier === PERF.tier) return;
+        const now = Date.now();
+
+        if (!PERF.manualOverride) {
+          const isDescending = newTier > PERF.tier;
+          const isAscending = newTier < PERF.tier;
+          if (isDescending && now - PERF.lastTierChange < PERF.DESCENT_COOLDOWN) return;
+          if (isAscending && now - PERF.lastTierChange < PERF.ASCENT_COOLDOWN) return;
+        }
+
+        for (let i = 1; i <= 4; i++) {
+          document.body.classList.remove('perf-tier-' + i);
+        }
+
+        for (let i = 1; i <= newTier; i++) {
+          document.body.classList.add('perf-tier-' + i);
+        }
+
+        if (newTier >= 3) {
+          document.documentElement.style.setProperty('--theme-transition', '0s');
+        } else {
+          document.documentElement.style.removeProperty('--theme-transition');
+        }
+
+        PERF.tier = newTier;
+        PERF.lastTierChange = now;
+        PERF.lowFpsStart = 0;
+        PERF.highFpsStart = 0;
+
+        if (!PERF.bannerShown && newTier >= 2 &&
+            window.location.pathname === '/screen' &&
+            now - PERF.initTime < 10000) {
+          perfShowBanner();
+        }
+      }
+
+      function perfStartFpsMonitor() {
+        let lastSampleTime = performance.now();
+        let frameCount = 0;
+
+        function tick(now) {
+          frameCount++;
+
+          if (now - lastSampleTime >= 500) {
+            const elapsed = (now - lastSampleTime) / 1000;
+            const fps = frameCount / elapsed;
+            lastSampleTime = now;
+            frameCount = 0;
+
+            PERF.fpsHistory.push({ time: now, fps: fps });
+            const cutoff = now - 4000;
+            PERF.fpsHistory = PERF.fpsHistory.filter(function(h) { return h.time > cutoff; });
+
+            perfEvaluateFps(now);
+          }
+
+          requestAnimationFrame(tick);
+        }
+
+        requestAnimationFrame(tick);
+      }
+
+      function perfEvaluateFps(now) {
+        if (PERF.manualOverride) return;
+        if (PERF.fpsHistory.length < 4) return;
+
+        var recent = PERF.fpsHistory.slice(-6);
+        var sum = 0;
+        for (var i = 0; i < recent.length; i++) sum += recent[i].fps;
+        var avgFps = sum / recent.length;
+
+        if (avgFps < 45) {
+          if (!PERF.lowFpsStart) {
+            PERF.lowFpsStart = now;
+            PERF.highFpsStart = 0;
+          } else if (now - PERF.lowFpsStart >= 3000) {
+            PERF.lowFpsStart = 0;
+            if (PERF.tier < 4) perfSetTier(PERF.tier + 1);
+          }
+        } else {
+          PERF.lowFpsStart = 0;
+        }
+
+        if (avgFps > 55) {
+          if (!PERF.highFpsStart) {
+            PERF.highFpsStart = now;
+          } else if (now - PERF.highFpsStart >= 5000) {
+            PERF.highFpsStart = 0;
+            if (PERF.tier > 0) perfSetTier(PERF.tier - 1);
+          }
+        } else {
+          PERF.highFpsStart = 0;
+        }
+      }
+
+      function perfBindToggle() {
+        var btn = document.getElementById('perfToggleButton');
+        if (!btn) return;
+
+        btn.addEventListener('click', function() {
+          PERF.manualOverride = true;
+          if (PERF.manualTimer) clearTimeout(PERF.manualTimer);
+
+          var nextTier = PERF.tier >= 4 ? 0 : PERF.tier + 1;
+          perfSetTier(nextTier);
+          btn.classList.add('manual-active');
+
+          PERF.manualTimer = setTimeout(function() {
+            PERF.manualOverride = false;
+            btn.classList.remove('manual-active');
+            PERF.manualTimer = null;
+          }, PERF.MANUAL_TIMEOUT);
+        });
+      }
+
+      function perfShowBanner() {
+        if (PERF.bannerShown) return;
+        PERF.bannerShown = true;
+        var banner = document.getElementById('perfBanner');
+        if (!banner) return;
+        banner.classList.add('visible');
+
+        var dismissBtn = document.getElementById('perfBannerDismiss');
+        if (dismissBtn) {
+          dismissBtn.addEventListener('click', function() {
+            banner.classList.remove('visible');
+          });
+        }
+      }
+
+      function perfInterval(baseMs) {
+        return PERF.tier >= 4 ? baseMs * 2 : baseMs;
+      }
+
       // ========== CONFIGURATION ==========
       const config = {
         showTime: true,
