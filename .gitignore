@@ -1,6 +1,9 @@
 cache/
 .env
 node_modules
+.opencode/
+graphify-out/
+AGENTS.md
 
 # Local server log
 server.log
