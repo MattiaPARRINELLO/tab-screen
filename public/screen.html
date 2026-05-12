@@ -1664,8 +1664,10 @@
       }
 
       body.perf-tier-3 .card:not(.hidden):not(#musicCard) {
-        animation:
-          cardEnter var(--duration-slow) var(--ease-spring) forwards;
+        animation: none;
+        opacity: 1;
+        transform: translateY(0) scale(1);
+        filter: blur(0);
       }
 
       body.perf-tier-3 .forecast-header::before {
@@ -1967,7 +1969,7 @@
 
     <button id="perfToggleButton" title="Performance tier" aria-label="Cycle performance tier">&#9889;</button>
     <div id="perfBanner">
-      <span>Device lent detecté —</span>
+      <span>Device lent détecté —</span>
       <a href="/screen/low-end">Passer en mode optimisé</a>
       <button id="perfBannerDismiss" aria-label="Fermer">&#10005;</button>
     </div>
@@ -2067,7 +2069,7 @@
         if (PERF.manualOverride) return;
         if (PERF.fpsHistory.length < 4) return;
 
-        var recent = PERF.fpsHistory.slice(-6);
+        var recent = PERF.fpsHistory.slice(-4);
         var sum = 0;
         for (var i = 0; i < recent.length; i++) sum += recent[i].fps;
         var avgFps = sum / recent.length;
@@ -2614,14 +2616,16 @@
       function startLyricsSync() {
         if (lyricsInterval) clearInterval(lyricsInterval);
 
+        let ticks = 0;
         lyricsInterval = setInterval(() => {
+          if (PERF.tier >= 4 && ticks++ % 2 === 0) return;
           const elapsed = (Date.now() - musicStartTime) / 1000;
           // Apply optional lyrics delay here so the active line selection
           // can be shifted forward/backward to compensate for latency.
           const currentTime =
             musicInitialPosition + elapsed + (config.lyricsDelaySeconds || 0);
           updateActiveLyric(currentTime);
-        }, perfInterval(250));
+        }, 250);
       }
 
       /**
@@ -3063,7 +3067,9 @@
       // Start or restart the progress interval (throttled to reduce CPU)
       function startProgressInterval() {
         if (progressInterval) clearInterval(progressInterval);
+        let pTicks = 0;
         progressInterval = setInterval(() => {
+          if (PERF.tier >= 4 && pTicks++ % 2 === 0) return;
           const elapsed = (Date.now() - musicStartTime) / 1000;
           const currentPosition = musicInitialPosition + elapsed;
           let progress = 0;
@@ -3076,7 +3082,7 @@
             clearInterval(progressInterval);
             hideMusicCard();
           }
-        }, perfInterval(250));
+        }, 250);
       }
 
       // ── Popup message ──────────────────────────────
