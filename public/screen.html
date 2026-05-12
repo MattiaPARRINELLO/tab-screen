@@ -1997,7 +1997,9 @@
 
       function perfInit() {
         const isLowEndRoute = window.location.pathname === '/screen/low-end';
-        perfSetTier(isLowEndRoute ? 3 : 0);
+        const startTier = isLowEndRoute ? 3 : 0;
+        console.log('[perf] init — route:', window.location.pathname, '— starting tier:', startTier);
+        perfSetTier(startTier);
         perfStartFpsMonitor();
         perfBindToggle();
       }
@@ -2027,6 +2029,7 @@
           document.documentElement.style.removeProperty('--theme-transition');
         }
 
+        console.log('[perf] tier', PERF.tier, '->', newTier, PERF.manualOverride ? '(manual)' : '(auto)');
         PERF.tier = newTier;
         PERF.lastTierChange = now;
         PERF.lowFpsStart = 0;
@@ -2080,6 +2083,7 @@
             PERF.highFpsStart = 0;
           } else if (now - PERF.lowFpsStart >= 3000) {
             PERF.lowFpsStart = 0;
+            console.log('[perf] low FPS sustained (avg', Math.round(avgFps), 'fps) — degrading to tier', PERF.tier + 1);
             if (PERF.tier < 4) perfSetTier(PERF.tier + 1);
           }
         } else {
@@ -2091,6 +2095,7 @@
             PERF.highFpsStart = now;
           } else if (now - PERF.highFpsStart >= 5000) {
             PERF.highFpsStart = 0;
+            console.log('[perf] FPS recovered (avg', Math.round(avgFps), 'fps) — upgrading to tier', PERF.tier - 1);
             if (PERF.tier > 0) perfSetTier(PERF.tier - 1);
           }
         } else {
@@ -2114,6 +2119,7 @@
             PERF.manualOverride = false;
             btn.classList.remove('manual-active');
             PERF.manualTimer = null;
+            console.log('[perf] manual override expired — auto-mode resumed');
           }, PERF.MANUAL_TIMEOUT);
         });
       }
@@ -2121,6 +2127,7 @@
       function perfShowBanner() {
         if (PERF.bannerShown) return;
         PERF.bannerShown = true;
+        console.log('[perf] banner shown — suggesting low-end mode');
         var banner = document.getElementById('perfBanner');
         if (!banner) return;
         banner.classList.add('visible');
