@@ -1,28 +1,28 @@
 // server.js
-const express    = require('express');
-const http       = require('http');
+const express = require('express');
+const http = require('http');
 const { Server } = require('socket.io');
-const fetch      = require('node-fetch');
-const fs         = require('fs');
-const path       = require('path');
-const dotenv     = require('dotenv');
+const fetch = require('node-fetch');
+const fs = require('fs');
+const path = require('path');
+const dotenv = require('dotenv');
 const lyricsCache = require('./services/lyricsCache');
 
 dotenv.config();
 
-const PORT               = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3000;
 const OPENWEATHER_API_KEY = process.env.OPENWEATHER_API_KEY;
-const LASTFM_API_KEY      = process.env.LASTFM_API_KEY;
-const VILLE               = process.env.VILLE       || 'Franconville';
-const VILLE_SHORT         = process.env.VILLE_SHORT || VILLE;
-const NO_LYRICS_PATH      = path.join(__dirname, 'cache', 'no-lyrics.json');
+const LASTFM_API_KEY = process.env.LASTFM_API_KEY;
+const VILLE = process.env.VILLE || 'Franconville';
+const VILLE_SHORT = process.env.VILLE_SHORT || VILLE;
+const NO_LYRICS_PATH = path.join(__dirname, 'cache', 'no-lyrics.json');
 
 if (!OPENWEATHER_API_KEY) console.warn('[config] ⚠  OPENWEATHER_API_KEY manquante');
-if (!LASTFM_API_KEY)      console.warn('[config] ⚠  LASTFM_API_KEY manquante');
+if (!LASTFM_API_KEY) console.warn('[config] ⚠  LASTFM_API_KEY manquante');
 
-const app    = express();
+const app = express();
 const server = http.createServer(app);
-const io     = new Server(server);
+const io = new Server(server);
 
 app.use(express.static('public'));
 app.use(express.json());
@@ -45,8 +45,8 @@ function fetchWithTimeout(url, timeoutMs = 5000, options = {}) {
 
 const weatherCache = { coords: null, weather: null, forecast: null };
 const TTL = {
-    coords:   24 * 3600e3, // coordonnées : 24 h (ne changent jamais)
-    weather:  10 * 60e3,   // météo : 10 min
+    coords: 24 * 3600e3, // coordonnées : 24 h (ne changent jamais)
+    weather: 10 * 60e3,   // météo : 10 min
     forecast: 30 * 60e3,   // prévisions : 30 min
 };
 const isFresh = (entry, ttl) => entry && (Date.now() - entry.ts) < ttl;
@@ -55,7 +55,7 @@ async function getCoords() {
     if (isFresh(weatherCache.coords, TTL.coords)) return weatherCache.coords.data;
 
     const url = `https://api.openweathermap.org/geo/1.0/direct?q=${encodeURIComponent(VILLE)}&limit=1&appid=${OPENWEATHER_API_KEY}`;
-    const res  = await fetchWithTimeout(url, 6000);
+    const res = await fetchWithTimeout(url, 6000);
     const data = await res.json();
 
     if (!Array.isArray(data) || !data.length) throw new Error(`Ville introuvable : ${VILLE}`);
@@ -70,15 +70,15 @@ async function getCoords() {
 // ──────────────────────────────────────────────
 
 const weatherIconMap = {
-    '01d': 'clear_day',                        '01n': 'clear_night',
-    '02d': 'partly_cloudy_day',                '02n': 'partly_cloudy_night',
-    '03d': 'mostly_cloudy_day',                '03n': 'mostly_cloudy_night',
-    '04d': 'cloudy',                           '04n': 'cloudy',
-    '09d': 'showers_rain',                     '09n': 'showers_rain',
-    '10d': 'rain_with_cloudy_dark',            '10n': 'rain_with_cloudy_dark',
-    '11d': 'strong_thunderstorms',             '11n': 'strong_thunderstorms',
-    '13d': 'snow_with_cloudy_dark',            '13n': 'snow_with_cloudy_dark',
-    '50d': 'haze_fog_dust_smoke',              '50n': 'haze_fog_dust_smoke',
+    '01d': 'clear_day', '01n': 'clear_night',
+    '02d': 'partly_cloudy_day', '02n': 'partly_cloudy_night',
+    '03d': 'mostly_cloudy_day', '03n': 'mostly_cloudy_night',
+    '04d': 'cloudy', '04n': 'cloudy',
+    '09d': 'showers_rain', '09n': 'showers_rain',
+    '10d': 'rain_with_cloudy_dark', '10n': 'rain_with_cloudy_dark',
+    '11d': 'strong_thunderstorms', '11n': 'strong_thunderstorms',
+    '13d': 'snow_with_cloudy_dark', '13n': 'snow_with_cloudy_dark',
+    '50d': 'haze_fog_dust_smoke', '50n': 'haze_fog_dust_smoke',
 };
 
 // ──────────────────────────────────────────────
@@ -91,11 +91,12 @@ let currentMusic = { title: '', artist: '', position: 0, duration: 0 };
 // Routes statiques
 // ──────────────────────────────────────────────
 
-app.get('/',            (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
-app.get('/screen',      (req, res) => res.sendFile(path.join(__dirname, 'public', 'screen.html')));
-app.get('/cache',       (req, res) => res.sendFile(path.join(__dirname, 'public', 'cache.html')));
-app.get('/message',     (req, res) => res.sendFile(path.join(__dirname, 'public', 'message.html')));
-app.get('/historique',  (req, res) => res.sendFile(path.join(__dirname, 'public', 'historique.html')));
+app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
+app.get('/screen', (req, res) => res.sendFile(path.join(__dirname, 'public', 'screen.html')));
+app.get('/screen/low-end', (req, res) => res.sendFile(path.join(__dirname, 'public', 'screen.html')));
+app.get('/cache', (req, res) => res.sendFile(path.join(__dirname, 'public', 'cache.html')));
+app.get('/message', (req, res) => res.sendFile(path.join(__dirname, 'public', 'message.html')));
+app.get('/historique', (req, res) => res.sendFile(path.join(__dirname, 'public', 'historique.html')));
 
 // ──────────────────────────────────────────────
 // Messages
@@ -178,12 +179,12 @@ app.get('/api/weather', async (req, res) => {
 
     try {
         const { lat, lon } = await getCoords();
-        const url  = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=metric&lang=fr&appid=${OPENWEATHER_API_KEY}`;
+        const url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=metric&lang=fr&appid=${OPENWEATHER_API_KEY}`;
         const resp = await fetchWithTimeout(url, 6000);
         const data = await resp.json();
 
         const iconCode = data.weather[0].icon;
-        const payload  = {
+        const payload = {
             name: VILLE_SHORT,
             temp: Math.round(data.main.temp),
             desc: data.weather[0].description,
@@ -205,15 +206,15 @@ app.get('/api/forecast', async (req, res) => {
 
     try {
         const { lat, lon } = await getCoords();
-        const url  = `https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&units=metric&lang=fr&appid=${OPENWEATHER_API_KEY}`;
+        const url = `https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&units=metric&lang=fr&appid=${OPENWEATHER_API_KEY}`;
         const resp = await fetchWithTimeout(url, 6000);
         const data = await resp.json();
 
         const list = data.list.slice(0, 5).map(f => ({
-            dt:          f.dt,
-            temp:        Math.round(f.main.temp),
+            dt: f.dt,
+            temp: Math.round(f.main.temp),
             description: f.weather[0].description,
-            icon:        weatherIconMap[f.weather[0].icon] || 'cloudy',
+            icon: weatherIconMap[f.weather[0].icon] || 'cloudy',
         }));
 
         const payload = { list };
@@ -237,10 +238,10 @@ app.post('/api/music', async (req, res) => {
     currentMusic = {
         title,
         artist,
-        album:     album || '',
-        position:  Number(position)  || 0,
-        duration:  Number(duration)  || 0,
-        cover:     '',
+        album: album || '',
+        position: Number(position) || 0,
+        duration: Number(duration) || 0,
+        cover: '',
         startTime: Date.now(),
     };
 
@@ -255,7 +256,7 @@ app.post('/api/music', async (req, res) => {
         if (currentMusic.title !== title || currentMusic.artist !== artist) return;
         currentMusic.cover = cover;
         io.emit('musicData', { ...currentMusic, position: currentMusic.position + (Date.now() - currentMusic.startTime) / 1000 });
-    }).catch(() => {});
+    }).catch(() => { });
 });
 
 /** Retire les suffixes parasites d'un titre ("feat.", "(Radio Edit)", etc.) */
@@ -273,26 +274,26 @@ function bestDeezerCover(item) {
 
 /** Cherche sur Deezer avec une requête donnée, retourne la meilleure cover */
 async function deezerSearch(query, title, artist) {
-    const url  = `https://api.deezer.com/search?q=${encodeURIComponent(query)}`;
+    const url = `https://api.deezer.com/search?q=${encodeURIComponent(query)}`;
     const resp = await fetchWithTimeout(url, 7000);
     const data = await resp.json();
     if (!data.data?.length) return '';
 
-    const titleLow  = title.toLowerCase();
+    const titleLow = title.toLowerCase();
     const artistLow = artist.toLowerCase();
-    const normLow   = normalizeTitle(title).toLowerCase();
+    const normLow = normalizeTitle(title).toLowerCase();
 
     // 1. Match exact titre + artiste
     const exact = data.data.find(
         i => i.title.toLowerCase() === titleLow
-          && i.artist.name.toLowerCase() === artistLow
+            && i.artist.name.toLowerCase() === artistLow
     );
     if (exact) return bestDeezerCover(exact);
 
     // 2. Match titre normalisé + artiste
     const normMatch = data.data.find(
         i => i.title.toLowerCase() === normLow
-          && i.artist.name.toLowerCase() === artistLow
+            && i.artist.name.toLowerCase() === artistLow
     );
     if (normMatch) return bestDeezerCover(normMatch);
 
@@ -331,7 +332,7 @@ async function fetchCover(title, artist) {
 
     // Last.fm fallback
     try {
-        const url  = `https://ws.audioscrobbler.com/2.0/?method=track.getInfo&api_key=${LASTFM_API_KEY}&artist=${encodeURIComponent(artist)}&track=${encodeURIComponent(title)}&format=json`;
+        const url = `https://ws.audioscrobbler.com/2.0/?method=track.getInfo&api_key=${LASTFM_API_KEY}&artist=${encodeURIComponent(artist)}&track=${encodeURIComponent(title)}&format=json`;
         const resp = await fetchWithTimeout(url, 6000);
         const data = await resp.json();
         const cover = data?.track?.album?.image?.find(img => img.size === 'extralarge')?.['#text'] || '';
@@ -350,7 +351,7 @@ async function fetchCover(title, artist) {
 io.on('connection', socket => {
     // Rattrapage musique
     if (currentMusic.title) {
-        const elapsed          = (Date.now() - (currentMusic.startTime || Date.now())) / 1000;
+        const elapsed = (Date.now() - (currentMusic.startTime || Date.now())) / 1000;
         const adjustedPosition = currentMusic.position + elapsed;
         if (adjustedPosition < currentMusic.duration) {
             socket.emit('musicData', { ...currentMusic, position: adjustedPosition });
@@ -379,9 +380,9 @@ io.on('connection', socket => {
 // ──────────────────────────────────────────────
 
 app.get('/api/lyrics', async (req, res) => {
-    const track  = req.query.track  || req.query.track_name  || req.query.trackName;
+    const track = req.query.track || req.query.track_name || req.query.trackName;
     const artist = req.query.artist || req.query.artist_name || req.query.artistName;
-    const album  = req.query.album  || req.query.album_name  || req.query.albumName;
+    const album = req.query.album || req.query.album_name || req.query.albumName;
 
     if (!track || !artist) return res.status(400).json({ error: 'Missing track or artist' });
 
@@ -429,13 +430,13 @@ app.get('/api/lyrics-cache/:file', async (req, res) => {
 const NO_LYRICS_DIR = path.dirname(NO_LYRICS_PATH);
 
 function ensureNoLyricsFile() {
-    if (!fs.existsSync(NO_LYRICS_DIR))  fs.mkdirSync(NO_LYRICS_DIR, { recursive: true });
+    if (!fs.existsSync(NO_LYRICS_DIR)) fs.mkdirSync(NO_LYRICS_DIR, { recursive: true });
     if (!fs.existsSync(NO_LYRICS_PATH)) fs.writeFileSync(NO_LYRICS_PATH, '[]', 'utf8');
 }
 
 async function addNoLyricsEntry(track, artist) {
     ensureNoLyricsFile();
-    const safeTrack  = String(track  || '').trim();
+    const safeTrack = String(track || '').trim();
     const safeArtist = String(artist || '').trim();
     if (!safeTrack && !safeArtist) return;
 
@@ -464,7 +465,7 @@ async function addNoLyricsEntry(track, artist) {
 }
 
 app.get('/nolyrics', (req, res) => {
-    try   { ensureNoLyricsFile(); res.sendFile(NO_LYRICS_PATH); }
+    try { ensureNoLyricsFile(); res.sendFile(NO_LYRICS_PATH); }
     catch (err) { console.error('[nolyrics]', err.message); res.status(500).json([]); }
 });
 
