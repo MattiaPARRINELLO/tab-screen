@@ -2687,6 +2687,8 @@
       let deferredCoverFallbackTimeout = null;
       let coverSwapTimeout = null;
       let coverSwapToken = 0;
+      let musicGeneration = 0;
+      let songChangeInProgress = false;
 
       // ========== TRANSITION ORCHESTRATOR ==========
       let activeTimelineId = 0;
@@ -2713,8 +2715,10 @@
             });
             return new Promise((resolve) => {
               setTimeout(() => {
-                if (activeTimelineId === id) activeTimelineId = 0;
-                resolve();
+                if (activeTimelineId === id) {
+                  activeTimelineId = 0;
+                  resolve();
+                }
               }, maxEnd);
             });
           }
@@ -3212,6 +3216,7 @@
       });
 
       async function handleMusicData(data) {
+        musicGeneration++;
         const nextSongKey = `${data.title || ""}__${data.artist || ""}`;
         const isSongChanged = nextSongKey !== currentSongKey;
 
@@ -3302,6 +3307,8 @@
           musicDurationEl.textContent = formatTime(musicDuration);
 
         // --- songChange timeline ---
+        songChangeInProgress = true;
+        try {
         if (isSongChanged && canAnimateSongChange()) {
           const prevProgress = parseFloat(progressBar.style.width) || 0;
 
@@ -3403,9 +3410,12 @@
             hideMusicCard();
           }, remaining * 1000);
         }
+        } finally { songChangeInProgress = false; }
       }
 
       function hideMusicCard() {
+        if (songChangeInProgress) return;
+        const hideGen = musicGeneration;
         clearDeferredCoverFallback();
         clearCoverSwapState();
 
@@ -3463,6 +3473,7 @@
           })
           .play()
           .then(() => {
+            if (musicGeneration !== hideGen) return;
             musicCard.classList.add("hidden");
             progressBar.style.width = "0%";
             if (musicDurationEl) musicDurationEl.textContent = "0:00";
