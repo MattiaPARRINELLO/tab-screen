@@ -3,6 +3,13 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#07090f" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="TabScreen" />
+    <link rel="apple-touch-icon" href="/icons/icon.svg" />
+    <meta name="mobile-web-app-capable" content="yes" />
     <title>Envoyer un message</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
     <style>
@@ -132,6 +139,34 @@
 
       .feedback.success { color: #4ecdc4; }
       .feedback.error   { color: #f87171; }
+      @supports (padding-top: env(safe-area-inset-top)) {
+        .card { padding-left: calc(2.5rem + env(safe-area-inset-left)); padding-right: calc(2.5rem + env(safe-area-inset-right)); }
+      }
+      @media (max-width: 480px) {
+        body { padding: 0.75rem; align-items: flex-start; padding-top: 2rem; }
+        .card { border-radius: 1.5rem; padding: 1.5rem; }
+        textarea { min-height: 120px; font-size: 16px; }
+      }
+    </style>
+    <style>
+    .update-banner {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      background: rgba(15, 19, 28, 0.95); backdrop-filter: blur(12px);
+      border-top: 1px solid rgba(255,255,255,0.08);
+      padding: 1rem 1.2rem; display: none;
+      justify-content: space-between; align-items: center;
+      z-index: 100; animation: slideUp 0.3s ease-out;
+    }
+    .update-banner.show { display: flex; }
+    .update-banner span { color: #eef2f7; font-size: 0.85rem; }
+    .update-banner button {
+      background: linear-gradient(135deg, #a78bfa, #4ecdc4);
+      border: none; border-radius: 0.6rem;
+      color: #fff; padding: 0.45rem 1rem;
+      font-family: inherit; font-size: 0.82rem; font-weight: 600;
+      cursor: pointer; flex-shrink: 0;
+    }
+    @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
     </style>
   </head>
   <body>
@@ -145,6 +180,11 @@
 
       <button id="btn" type="button">Envoyer</button>
       <div class="feedback" id="feedback"></div>
+    </div>
+
+    <div class="update-banner" id="updateBanner">
+      <span>Une nouvelle version est disponible</span>
+      <button id="updateBtn">Mettre à jour</button>
     </div>
 
     <script>
@@ -185,8 +225,11 @@
             feedback.className = "feedback error";
           }
         } catch {
-          feedback.textContent = "Impossible de joindre le serveur";
-          feedback.className = "feedback error";
+          feedback.textContent = "Message mis en file d'attente";
+          feedback.className = "feedback success";
+          saveOffline(text);
+          textarea.value = "";
+          counter.textContent = "0 / 500";
         } finally {
           btn.disabled = false;
         }
@@ -195,6 +238,112 @@
       textarea.addEventListener("keydown", (e) => {
         if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) btn.click();
       });
+
+      function openDB() {
+        return new Promise((resolve, reject) => {
+          const req = indexedDB.open("TabScreenOffline", 1);
+          req.onupgradeneeded = () => {
+            const db = req.result;
+            if (!db.objectStoreNames.contains("messages")) {
+              db.createObjectStore("messages", { autoIncrement: true });
+            }
+          };
+          req.onsuccess = () => resolve(req.result);
+          req.onerror = () => reject(req.error);
+        });
+      }
+
+      async function saveOffline(text) {
+        try {
+          const db = await openDB();
+          const tx = db.transaction("messages", "readwrite");
+          tx.objectStore("messages").add({ text, savedAt: Date.now() });
+        } catch (e) {
+          console.error("IndexedDB error:", e);
+        }
+      }
+
+      async function flushOffline() {
+        try {
+          const db = await openDB();
+          const tx = db.transaction("messages", "readonly");
+          const store = tx.objectStore("messages");
+          const all = await new Promise((res) => {
+            const req = store.getAll();
+            req.onsuccess = () => res(req.result);
+          });
+          const keys = await new Promise((res) => {
+            const req = store.getAllKeys();
+            req.onsuccess = () => res(req.result);
+          });
+          if (!all.length) return;
+          for (let i = 0; i < all.length; i++) {
+            try {
+              await fetch("/api/message", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ text: all[i].text }),
+              });
+              const delTx = db.transaction("messages", "readwrite");
+              delTx.objectStore("messages").delete(keys[i]);
+            } catch { /* will retry later */ }
+          }
+        } catch (e) {
+          console.error("Flush error:", e);
+        }
+      }
+
+      async function subscribePush(reg) {
+        try {
+          const sub = await reg.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: urlBase64ToUint8Array("BBA6sOVUvlznWXqwR5g4MOjLv1Qm-pbcnI1Gq2kY_aNy_s6GFPFJ8B0U0Fh_GEBfc4CNUyUGloIDnHFb5JsqF9A"),
+          });
+          await fetch("/api/push/subscribe", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(sub.toJSON()),
+          });
+        } catch (e) {
+          console.log("Push subscription not supported or denied");
+        }
+      }
+
+      function urlBase64ToUint8Array(base64String) {
+        const padding = "=".repeat((4 - base64String.length % 4) % 4);
+        const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+        const rawData = window.atob(base64);
+        return Uint8Array.from([...rawData].map((ch) => ch.charCodeAt(0)));
+      }
+
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker.register("/sw.js").then((reg) => {
+          reg.addEventListener("updatefound", () => {
+            const newWorker = reg.installing;
+            newWorker.addEventListener("statechange", () => {
+              if (newWorker.state === "installed" && navigator.serviceWorker.controller) {
+                document.getElementById("updateBanner").classList.add("show");
+              }
+            });
+          });
+          subscribePush(reg);
+        }).catch((e) => console.error("SW registration failed:", e));
+
+        navigator.serviceWorker.addEventListener("controllerchange", () => {
+          window.location.reload();
+        });
+
+        document.getElementById("updateBtn").addEventListener("click", () => {
+          navigator.serviceWorker.ready.then((reg) => {
+            reg.waiting.postMessage({ action: "SKIP_WAITING" });
+          });
+        });
+
+        window.addEventListener("online", flushOffline);
+        window.addEventListener("load", () => {
+          if (navigator.onLine) flushOffline();
+        });
+      }
     </script>
   </body>
 </html>
