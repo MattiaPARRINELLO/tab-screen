@@ -29,6 +29,10 @@ app.use(express.json());
 
 app.get('/manifest.json', (req, res) => res.sendFile(path.join(__dirname, 'manifest.json')));
 
+app.get('/notify', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'notify.html'));
+});
+
 // ──────────────────────────────────────────────
 // Helpers
 // ──────────────────────────────────────────────
