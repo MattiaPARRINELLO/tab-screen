@@ -295,9 +295,11 @@
 
       async function subscribePush(reg) {
         try {
+          const res = await fetch("/api/push/public-key");
+          const { publicKey } = await res.json();
           const sub = await reg.pushManager.subscribe({
             userVisibleOnly: true,
-            applicationServerKey: urlBase64ToUint8Array("BBA6sOVUvlznWXqwR5g4MOjLv1Qm-pbcnI1Gq2kY_aNy_s6GFPFJ8B0U0Fh_GEBfc4CNUyUGloIDnHFb5JsqF9A"),
+            applicationServerKey: urlBase64ToUint8Array(publicKey),
           });
           await fetch("/api/push/subscribe", {
             method: "POST",

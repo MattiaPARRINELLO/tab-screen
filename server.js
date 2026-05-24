@@ -8,6 +8,124 @@ const path = require('path');
 const dotenv = require('dotenv');
 const lyricsCache = require('./services/lyricsCache');
 
+// ──────────────────────────────────────────────
+// Push notifications (VAPID)
+// ──────────────────────────────────────────────
+
+const webPush = require('web-push');
+const VAPID_KEYS_PATH = path.join(__dirname, 'cache', 'vapid-keys.json');
+const SUBSCRIPTIONS_PATH = path.join(__dirname, 'cache', 'subscriptions.json');
+
+function loadVapidKeys() {
+  try {
+    if (fs.existsSync(VAPID_KEYS_PATH)) {
+      return JSON.parse(fs.readFileSync(VAPID_KEYS_PATH, 'utf8'));
+    }
+  } catch (e) { console.error('[vapid] Erreur lecture clés:', e.message); }
+  return null;
+}
+
+function saveVapidKeys(keys) {
+  try {
+    fs.mkdirSync(path.dirname(VAPID_KEYS_PATH), { recursive: true });
+    fs.writeFileSync(VAPID_KEYS_PATH, JSON.stringify(keys, null, 2));
+  } catch (e) { console.error('[vapid] Erreur écriture clés:', e.message); }
+}
+
+let vapidKeys = loadVapidKeys();
+if (!vapidKeys) {
+  console.log('[vapid] Génération de nouvelles clés…');
+  vapidKeys = webPush.generateVAPIDKeys();
+  saveVapidKeys(vapidKeys);
+}
+
+webPush.setVapidDetails(
+  'mailto:admin@tab-screen.local',
+  vapidKeys.publicKey,
+  vapidKeys.privateKey
+);
+
+function loadSubscriptions() {
+  try {
+    if (fs.existsSync(SUBSCRIPTIONS_PATH)) {
+      return JSON.parse(fs.readFileSync(SUBSCRIPTIONS_PATH, 'utf8'));
+    }
+  } catch (e) { console.error('[push] Erreur lecture abonnements:', e.message); }
+  return [];
+}
+
+function saveSubscriptions(subs) {
+  try {
+    fs.mkdirSync(path.dirname(SUBSCRIPTIONS_PATH), { recursive: true });
+    fs.writeFileSync(SUBSCRIPTIONS_PATH, JSON.stringify(subs, null, 2));
+  } catch (e) { console.error('[push] Erreur écriture abonnements:', e.message); }
+}
+
+let subscriptions = loadSubscriptions();
+
+// VAPID public key endpoint
+app.get('/api/push/public-key', (req, res) => {
+  res.json({ publicKey: vapidKeys.publicKey });
+});
+
+// Subscribe endpoint
+app.post('/api/push/subscribe', (req, res) => {
+  const sub = req.body;
+  if (!sub || !sub.endpoint) {
+    return res.status(400).json({ error: 'Abonnement invalide' });
+  }
+  const exists = subscriptions.some(s => s.endpoint === sub.endpoint);
+  if (!exists) {
+    subscriptions.push(sub);
+    saveSubscriptions(subscriptions);
+  }
+  res.json({ ok: true });
+});
+
+// Send push notification
+app.post('/api/push/send', async (req, res) => {
+  const { title, body } = req.body;
+  if (!title && !body) {
+    return res.status(400).json({ error: 'Titre ou message requis' });
+  }
+
+  const payload = JSON.stringify({
+    title: title || 'Tab Screen',
+    body: body || '',
+  });
+
+  const results = await Promise.allSettled(
+    subscriptions.map(sub =>
+      webPush.sendNotification(sub, payload).catch(err => {
+        if (err.statusCode === 410 || err.statusCode === 404) {
+          return { expired: true, sub };
+        }
+        throw err;
+      })
+    )
+  );
+
+  const active = [];
+  for (const result of results) {
+    if (result.status === 'fulfilled' && result.value?.expired) {
+      continue;
+    }
+    if (result.status === 'fulfilled') {
+    }
+  }
+
+  const expiredEndpoints = results
+    .filter(r => r.status === 'fulfilled' && r.value?.expired)
+    .map(r => r.value.sub.endpoint);
+
+  if (expiredEndpoints.length > 0) {
+    subscriptions = subscriptions.filter(s => !expiredEndpoints.includes(s.endpoint));
+    saveSubscriptions(subscriptions);
+  }
+
+  res.json({ ok: true, sent: subscriptions.length, expired: expiredEndpoints.length });
+});
+
 dotenv.config();
 
 const PORT = process.env.PORT || 3000;
