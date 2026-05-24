@@ -27,6 +27,8 @@ const io = new Server(server);
 app.use(express.static('public'));
 app.use(express.json());
 
+app.get('/manifest.json', (req, res) => res.sendFile(path.join(__dirname, 'manifest.json')));
+
 // ──────────────────────────────────────────────
 // Helpers
 // ──────────────────────────────────────────────
