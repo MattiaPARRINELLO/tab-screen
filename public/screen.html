@@ -1751,6 +1751,35 @@
         color: var(--text-secondary);
       }
 
+      #notifyLink {
+        position: fixed;
+        bottom: 12px;
+        right: 52px;
+        z-index: 9999;
+        background: rgba(15, 19, 28, 0.6);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 10px;
+        color: var(--text-muted);
+        font-size: 0.9rem;
+        width: 34px;
+        height: 34px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        opacity: 0.18;
+        transition: opacity 0.3s, color 0.3s;
+        user-select: none;
+        -webkit-user-select: none;
+        text-decoration: none;
+        line-height: 1;
+      }
+
+      #notifyLink:hover {
+        opacity: 1;
+        color: var(--text-secondary);
+      }
+
       #perfToggleButton.manual-active {
         opacity: 1;
         color: rgba(var(--album-r), var(--album-g), var(--album-b), 0.8);
@@ -1974,6 +2003,7 @@
       </div>
     </div>
 
+    <a id="notifyLink" href="/notify" target="_blank" title="Envoyer une notification" aria-label="Envoyer une notification">🔔</a>
     <button id="perfToggleButton" title="Performance tier" aria-label="Cycle performance tier">&#9889;</button>
     <div id="perfBanner">
       <span>Device lent détecté —</span>
