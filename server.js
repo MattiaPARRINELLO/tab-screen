@@ -17,55 +17,55 @@ const VAPID_KEYS_PATH = path.join(__dirname, 'cache', 'vapid-keys.json');
 const SUBSCRIPTIONS_PATH = path.join(__dirname, 'cache', 'subscriptions.json');
 
 function loadVapidKeys() {
-  try {
-    if (fs.existsSync(VAPID_KEYS_PATH)) {
-      return JSON.parse(fs.readFileSync(VAPID_KEYS_PATH, 'utf8'));
-    }
-  } catch (e) { console.error('[vapid] Erreur lecture clés:', e.message); }
-  return null;
+    try {
+        if (fs.existsSync(VAPID_KEYS_PATH)) {
+            return JSON.parse(fs.readFileSync(VAPID_KEYS_PATH, 'utf8'));
+        }
+    } catch (e) { console.error('[vapid] Erreur lecture clés:', e.message); }
+    return null;
 }
 
 function saveVapidKeys(keys) {
-  try {
-    fs.mkdirSync(path.dirname(VAPID_KEYS_PATH), { recursive: true });
-    fs.writeFileSync(VAPID_KEYS_PATH, JSON.stringify(keys, null, 2));
-  } catch (e) { console.error('[vapid] Erreur écriture clés:', e.message); }
+    try {
+        fs.mkdirSync(path.dirname(VAPID_KEYS_PATH), { recursive: true });
+        fs.writeFileSync(VAPID_KEYS_PATH, JSON.stringify(keys, null, 2));
+    } catch (e) { console.error('[vapid] Erreur écriture clés:', e.message); }
 }
 
 let vapidKeys = loadVapidKeys();
 if (!vapidKeys) {
-  console.log('[vapid] Génération de nouvelles clés…');
-  vapidKeys = webPush.generateVAPIDKeys();
-  saveVapidKeys(vapidKeys);
+    console.log('[vapid] Génération de nouvelles clés…');
+    vapidKeys = webPush.generateVAPIDKeys();
+    saveVapidKeys(vapidKeys);
 }
 
 webPush.setVapidDetails(
-  'mailto:admin@tab-screen.local',
-  vapidKeys.publicKey,
-  vapidKeys.privateKey
+    'mailto:admin@tab-screen.local',
+    vapidKeys.publicKey,
+    vapidKeys.privateKey
 );
 
 function loadSubscriptions() {
-  try {
-    if (fs.existsSync(SUBSCRIPTIONS_PATH)) {
-      return JSON.parse(fs.readFileSync(SUBSCRIPTIONS_PATH, 'utf8'));
-    }
-  } catch (e) { console.error('[push] Erreur lecture abonnements:', e.message); }
-  return [];
+    try {
+        if (fs.existsSync(SUBSCRIPTIONS_PATH)) {
+            return JSON.parse(fs.readFileSync(SUBSCRIPTIONS_PATH, 'utf8'));
+        }
+    } catch (e) { console.error('[push] Erreur lecture abonnements:', e.message); }
+    return [];
 }
 
 function saveSubscriptions(subs) {
-  try {
-    fs.mkdirSync(path.dirname(SUBSCRIPTIONS_PATH), { recursive: true });
-    fs.writeFileSync(SUBSCRIPTIONS_PATH, JSON.stringify(subs, null, 2));
-  } catch (e) { console.error('[push] Erreur écriture abonnements:', e.message); }
+    try {
+        fs.mkdirSync(path.dirname(SUBSCRIPTIONS_PATH), { recursive: true });
+        fs.writeFileSync(SUBSCRIPTIONS_PATH, JSON.stringify(subs, null, 2));
+    } catch (e) { console.error('[push] Erreur écriture abonnements:', e.message); }
 }
 
 let subscriptions = loadSubscriptions();
 
 dotenv.config();
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3003;
 const OPENWEATHER_API_KEY = process.env.OPENWEATHER_API_KEY;
 const LASTFM_API_KEY = process.env.LASTFM_API_KEY;
 const VILLE = process.env.VILLE || 'Franconville';
@@ -87,60 +87,60 @@ app.use(express.json());
 // ──────────────────────────────────────────────
 
 app.get('/api/push/public-key', (req, res) => {
-  res.json({ publicKey: vapidKeys.publicKey });
+    res.json({ publicKey: vapidKeys.publicKey });
 });
 
 app.post('/api/push/subscribe', (req, res) => {
-  const sub = req.body;
-  if (!sub || !sub.endpoint) {
-    return res.status(400).json({ error: 'Abonnement invalide' });
-  }
-  const exists = subscriptions.some(s => s.endpoint === sub.endpoint);
-  if (!exists) {
-    subscriptions.push(sub);
-    saveSubscriptions(subscriptions);
-  }
-  res.json({ ok: true });
+    const sub = req.body;
+    if (!sub || !sub.endpoint) {
+        return res.status(400).json({ error: 'Abonnement invalide' });
+    }
+    const exists = subscriptions.some(s => s.endpoint === sub.endpoint);
+    if (!exists) {
+        subscriptions.push(sub);
+        saveSubscriptions(subscriptions);
+    }
+    res.json({ ok: true });
 });
 
 app.post('/api/push/send', async (req, res) => {
-  const { title, body } = req.body;
-  if (!title && !body) {
-    return res.status(400).json({ error: 'Titre ou message requis' });
-  }
+    const { title, body } = req.body;
+    if (!title && !body) {
+        return res.status(400).json({ error: 'Titre ou message requis' });
+    }
 
-  const payload = JSON.stringify({
-    title: title || 'Tab Screen',
-    body: body || '',
-  });
+    const payload = JSON.stringify({
+        title: title || 'Tab Screen',
+        body: body || '',
+    });
 
-  const results = await Promise.allSettled(
-    subscriptions.map(sub =>
-      webPush.sendNotification(sub, payload).catch(err => {
-        if (err.statusCode === 410 || err.statusCode === 404) {
-          return { expired: true, sub };
-        }
-        throw err;
-      })
-    )
-  );
+    const results = await Promise.allSettled(
+        subscriptions.map(sub =>
+            webPush.sendNotification(sub, payload).catch(err => {
+                if (err.statusCode === 410 || err.statusCode === 404) {
+                    return { expired: true, sub };
+                }
+                throw err;
+            })
+        )
+    );
 
-  const expiredEndpoints = results
-    .filter(r => r.status === 'fulfilled' && r.value?.expired)
-    .map(r => r.value.sub.endpoint);
+    const expiredEndpoints = results
+        .filter(r => r.status === 'fulfilled' && r.value?.expired)
+        .map(r => r.value.sub.endpoint);
 
-  if (expiredEndpoints.length > 0) {
-    subscriptions = subscriptions.filter(s => !expiredEndpoints.includes(s.endpoint));
-    saveSubscriptions(subscriptions);
-  }
+    if (expiredEndpoints.length > 0) {
+        subscriptions = subscriptions.filter(s => !expiredEndpoints.includes(s.endpoint));
+        saveSubscriptions(subscriptions);
+    }
 
-  res.json({ ok: true, sent: subscriptions.length, expired: expiredEndpoints.length });
+    res.json({ ok: true, sent: subscriptions.length, expired: expiredEndpoints.length });
 });
 
 app.get('/manifest.json', (req, res) => res.sendFile(path.join(__dirname, 'manifest.json')));
 
 app.get('/notify', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'notify.html'));
+    res.sendFile(path.join(__dirname, 'public', 'notify.html'));
 });
 
 // ──────────────────────────────────────────────
