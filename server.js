@@ -63,12 +63,33 @@ function saveSubscriptions(subs) {
 
 let subscriptions = loadSubscriptions();
 
-// VAPID public key endpoint
+dotenv.config();
+
+const PORT = process.env.PORT || 3000;
+const OPENWEATHER_API_KEY = process.env.OPENWEATHER_API_KEY;
+const LASTFM_API_KEY = process.env.LASTFM_API_KEY;
+const VILLE = process.env.VILLE || 'Franconville';
+const VILLE_SHORT = process.env.VILLE_SHORT || VILLE;
+const NO_LYRICS_PATH = path.join(__dirname, 'cache', 'no-lyrics.json');
+
+if (!OPENWEATHER_API_KEY) console.warn('[config] ⚠  OPENWEATHER_API_KEY manquante');
+if (!LASTFM_API_KEY) console.warn('[config] ⚠  LASTFM_API_KEY manquante');
+
+const app = express();
+const server = http.createServer(app);
+const io = new Server(server);
+
+app.use(express.static('public'));
+app.use(express.json());
+
+// ──────────────────────────────────────────────
+// Push notification routes
+// ──────────────────────────────────────────────
+
 app.get('/api/push/public-key', (req, res) => {
   res.json({ publicKey: vapidKeys.publicKey });
 });
 
-// Subscribe endpoint
 app.post('/api/push/subscribe', (req, res) => {
   const sub = req.body;
   if (!sub || !sub.endpoint) {
@@ -82,7 +103,6 @@ app.post('/api/push/subscribe', (req, res) => {
   res.json({ ok: true });
 });
 
-// Send push notification
 app.post('/api/push/send', async (req, res) => {
   const { title, body } = req.body;
   if (!title && !body) {
@@ -105,15 +125,6 @@ app.post('/api/push/send', async (req, res) => {
     )
   );
 
-  const active = [];
-  for (const result of results) {
-    if (result.status === 'fulfilled' && result.value?.expired) {
-      continue;
-    }
-    if (result.status === 'fulfilled') {
-    }
-  }
-
   const expiredEndpoints = results
     .filter(r => r.status === 'fulfilled' && r.value?.expired)
     .map(r => r.value.sub.endpoint);
@@ -125,25 +136,6 @@ app.post('/api/push/send', async (req, res) => {
 
   res.json({ ok: true, sent: subscriptions.length, expired: expiredEndpoints.length });
 });
-
-dotenv.config();
-
-const PORT = process.env.PORT || 3000;
-const OPENWEATHER_API_KEY = process.env.OPENWEATHER_API_KEY;
-const LASTFM_API_KEY = process.env.LASTFM_API_KEY;
-const VILLE = process.env.VILLE || 'Franconville';
-const VILLE_SHORT = process.env.VILLE_SHORT || VILLE;
-const NO_LYRICS_PATH = path.join(__dirname, 'cache', 'no-lyrics.json');
-
-if (!OPENWEATHER_API_KEY) console.warn('[config] ⚠  OPENWEATHER_API_KEY manquante');
-if (!LASTFM_API_KEY) console.warn('[config] ⚠  LASTFM_API_KEY manquante');
-
-const app = express();
-const server = http.createServer(app);
-const io = new Server(server);
-
-app.use(express.static('public'));
-app.use(express.json());
 
 app.get('/manifest.json', (req, res) => res.sendFile(path.join(__dirname, 'manifest.json')));
 
