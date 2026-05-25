@@ -2,7 +2,9 @@ const CACHE_NAME = 'tab-screen-v1';
 const PRECACHE_URLS = [
   '/message.html',
   '/manifest.json',
-  '/icons/icon.svg'
+  '/icons/icon.svg',
+  '/icons/icon-192.png',
+  '/icons/icon-512.png'
 ];
 
 self.addEventListener('install', (event) => {
@@ -55,8 +57,8 @@ self.addEventListener('push', (event) => {
   event.waitUntil(
     self.registration.showNotification(data.title || 'Tab Screen', {
       body: data.body || '',
-      icon: '/icons/icon.svg',
-      badge: '/icons/icon.svg'
+      icon: '/icons/icon-192.png',
+      badge: '/icons/icon-192.png'
     })
   );
 });

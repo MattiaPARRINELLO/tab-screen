@@ -65,7 +65,7 @@ let subscriptions = loadSubscriptions();
 
 dotenv.config();
 
-const PORT = process.env.PORT || 3003;
+const PORT = process.env.PORT || 3000;
 const OPENWEATHER_API_KEY = process.env.OPENWEATHER_API_KEY;
 const LASTFM_API_KEY = process.env.LASTFM_API_KEY;
 const VILLE = process.env.VILLE || 'Franconville';
