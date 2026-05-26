@@ -202,6 +202,7 @@ const weatherIconMap = {
 // ──────────────────────────────────────────────
 
 let currentMusic = { title: '', artist: '', position: 0, duration: 0 };
+let musicFetchGen = 0;
 
 // ──────────────────────────────────────────────
 // Routes statiques
@@ -245,7 +246,7 @@ function normalizeMessageHistory(msgs) {
 
         if (!hasActiveMessage) {
             hasActiveMessage = true;
-            return msg;
+            return { ...msg };
         }
 
         changed = true;
@@ -351,6 +352,9 @@ app.post('/api/music', async (req, res) => {
 
     if (!title || !artist) return res.sendStatus(400);
 
+    const fetchGen = ++musicFetchGen;
+    const startTime = Date.now();
+
     currentMusic = {
         title,
         artist,
@@ -358,7 +362,7 @@ app.post('/api/music', async (req, res) => {
         position: Number(position) || 0,
         duration: Number(duration) || 0,
         cover: '',
-        startTime: Date.now(),
+        startTime,
     };
 
     // Répondre et émettre immédiatement (sans attendre la cover)
@@ -367,11 +371,9 @@ app.post('/api/music', async (req, res) => {
 
     // Chercher la cover de façon asynchrone, puis réémettre si trouvée
     fetchCover(title, artist).then(cover => {
-        if (!cover) return;
-        // Vérifier que la musique n'a pas changé entre-temps
-        if (currentMusic.title !== title || currentMusic.artist !== artist) return;
+        if (!cover || fetchGen !== musicFetchGen) return;
         currentMusic.cover = cover;
-        io.emit('musicData', { ...currentMusic, position: currentMusic.position + (Date.now() - currentMusic.startTime) / 1000 });
+        io.emit('musicData', { ...currentMusic, position: (currentMusic.position || 0) + (Date.now() - startTime) / 1000 });
     }).catch(() => { });
 });
 
@@ -505,11 +507,6 @@ app.get('/api/lyrics', async (req, res) => {
     try {
         const syncedLyrics = await lyricsCache.getLyrics(track, artist, album);
         if (syncedLyrics) return res.json({ syncedLyrics });
-
-        const fallback = await lyricsCache.tryVariants(track, artist, album);
-        if (fallback?.syncedLyrics) {
-            return res.json({ syncedLyrics: fallback.syncedLyrics, usedVariant: fallback.used });
-        }
 
         await addNoLyricsEntry(track, artist);
         return res.status(404).json({ error: 'Paroles introuvables' });
