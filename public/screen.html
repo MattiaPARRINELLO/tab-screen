@@ -397,14 +397,12 @@
           var(--shadow-md),
           0 1px 0 rgba(255, 255, 255, 0.05) inset,
           0 0 0 0.5px rgba(255, 255, 255, 0.04) inset;
-        overflow: hidden;
-        position: relative;
-        display: flex;
-        flex-direction: column;
-        min-height: 0;
-        opacity: 0;
-        transform: scale(0.95) translateY(12px);
-        z-index: 1;
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    z-index: 1;
       }
 
       /* Inner ambient light — top-left corner glow */
@@ -448,7 +446,13 @@
         z-index: 1;
       }
 
-      .card:not(.hidden) {
+      .card.entered {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+        filter: blur(0);
+      }
+
+      .card:not(.hidden):not(.entered) {
         animation: cardEnter var(--duration-slow) var(--ease-spring) forwards;
       }
 
@@ -472,10 +476,14 @@
         }
       }
 
-      .card:not(.hidden):not(#musicCard) {
+      .card:not(.hidden):not(#musicCard):not(.entered) {
         animation:
           cardEnter var(--duration-slow) var(--ease-spring) forwards,
           breathe 12s ease-in-out 1.5s infinite;
+      }
+
+      .card.entered:not(#musicCard) {
+        animation: breathe 12s ease-in-out 1.5s infinite;
       }
 
       @keyframes cardEnter {
@@ -869,7 +877,7 @@
           box-shadow var(--theme-transition) var(--ease-smooth);
       }
 
-      #musicCard:not(.hidden) {
+      #musicCard:not(.hidden):not(.entered) {
         animation: cardEnter var(--duration-slow) var(--ease-spring) forwards;
       }
 
@@ -1549,9 +1557,9 @@
           display: none;
         }
 
-        /* Supprimer le wash animé — garder juste le fond body */
-        .album-color-wash {
-          display: none;
+        /* Wash statique sans animation — garder les couleurs visibles */
+        .album-color-wash.active {
+          animation: none;
         }
 
         /* Réduire les ombres complexes */
@@ -1695,8 +1703,7 @@
         transform: scale(1);
       }
 
-      /* Tier 4 — strip will-change hints, no-op all remaining decorative animations */
-      body.perf-tier-4 .album-color-wash,
+      /* Tier 4 — strip will-change hints, no-op animations, keep colors visible */
       body.perf-tier-4 .bg-orb,
       body.perf-tier-4 .card,
       body.perf-tier-4 .music-cover,
@@ -1705,7 +1712,10 @@
         will-change: auto;
       }
 
-      body.perf-tier-4 .album-color-wash,
+      body.perf-tier-4 .album-color-wash.active {
+        animation: none;
+      }
+
       body.perf-tier-4 .card::before,
       body.perf-tier-4 .card::after,
       body.perf-tier-4 .music-cover-wrapper::after {
@@ -3261,12 +3271,12 @@
             // Appliquer les couleurs album maintenant qu'on a la vraie pochette
             const img = new Image();
             img.crossOrigin = "Anonymous";
-            img.src = data.cover;
             img.onload = () => {
               try {
                 applyAlbumColors(img);
               } catch (e) {}
             };
+            img.src = data.cover;
           }
 
           // Si la position a changé significativement (> 2 sec), resynchroniser
@@ -3350,6 +3360,11 @@
             { el: musicBottomEl.querySelector(".music-progress-row"), delayOut: 80, delayIn: 70 },
           ].filter((t) => t.el);
 
+          // Cancel any stale animations (e.g. frozen by a previous hideMusicCard race)
+          staggerTargets.forEach((t) => {
+            if (t.el) t.el.getAnimations().forEach((a) => a.cancel());
+          });
+
           await createTimeline()
             .phase('content_out', 0, 250, () => {
               staggerTargets.forEach((t) => {
@@ -3410,8 +3425,6 @@
           clearDeferredCoverFallback();
           const img = new Image();
           img.crossOrigin = "Anonymous";
-          img.src = data.cover;
-
           img.onload = () => {
             try {
               applyAlbumColors(img);
@@ -3420,6 +3433,7 @@
             }
           };
           img.onerror = () => {};
+          img.src = data.cover;
         } else {
           // Éviter un flash brutal: on conserve temporairement l'ancien thème
           // et on ne passe au fallback que si la cover n'arrive pas rapidement.
@@ -3428,6 +3442,7 @@
 
         // Show music card with animation
         musicCard.classList.remove("hidden");
+        setTimeout(() => musicCard.classList.add("entered"), 1000);
         updateForecastLayout();
 
         // Smooth progress animation (throttled)
@@ -3460,6 +3475,7 @@
           document.body.classList.remove("music-theme-active");
           albumColorWash.classList.remove("active");
           document.querySelectorAll(".bg-orb").forEach((orb) => orb.classList.remove("active"));
+          musicCard.classList.remove("entered");
           musicCard.classList.add("hidden");
           progressBar.style.width = "0%";
           if (musicDurationEl) musicDurationEl.textContent = "0:00";
@@ -3504,6 +3520,7 @@
           .play()
           .then(() => {
             if (musicGeneration !== hideGen) return;
+            musicCard.classList.remove("entered");
             musicCard.classList.add("hidden");
             progressBar.style.width = "0%";
             if (musicDurationEl) musicDurationEl.textContent = "0:00";
@@ -3571,6 +3588,9 @@
       window.addEventListener("resize", applyNoPanForTablet);
 
       init();
+      setTimeout(() => {
+        document.querySelectorAll('.card:not(.hidden)').forEach(el => el.classList.add('entered'));
+      }, 1000);
       perfInit();
     </script>
   </body>
