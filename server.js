@@ -146,6 +146,10 @@ app.post('/api/push/send', async (req, res) => {
     res.json({ ok: true, sent: subscriptions.length, expired: expiredEndpoints.length });
 });
 
+app.get('/api/push/subscriptions/count', (req, res) => {
+    res.json({ count: subscriptions.length });
+});
+
 app.get('/manifest.json', (req, res) => res.sendFile(path.join(__dirname, 'manifest.json')));
 
 app.get('/notify', (req, res) => {
