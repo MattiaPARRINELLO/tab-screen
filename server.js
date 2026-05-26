@@ -85,7 +85,7 @@ app.use(express.json());
 // CORS pour le frontend youyou.mprnl.fr
 app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Origin', 'https://youyou.mprnl.fr');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   if (req.method === 'OPTIONS') return res.sendStatus(200);
   next();
@@ -288,6 +288,21 @@ app.post('/api/message', (req, res) => {
     saveMessages(messageHistory);
 
     io.emit('popupMessage', pendingMessage);
+
+    // Envoyer une notification push à tous les abonnés
+    const pushPayload = JSON.stringify({
+        title: '💌 Nouveau message',
+        body: text.length > 80 ? text.slice(0, 80) + '…' : text,
+    });
+    for (const sub of subscriptions) {
+        webPush.sendNotification(sub, pushPayload).catch(err => {
+            if (err.statusCode === 410 || err.statusCode === 404) {
+                subscriptions = subscriptions.filter(s => s.endpoint !== sub.endpoint);
+                saveSubscriptions(subscriptions);
+            }
+        });
+    }
+
     res.json({ ok: true });
 });
 
