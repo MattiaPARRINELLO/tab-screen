@@ -82,6 +82,15 @@ const io = new Server(server);
 app.use(express.static('public'));
 app.use(express.json());
 
+// CORS pour le frontend youyou.mprnl.fr
+app.use((req, res, next) => {
+  res.setHeader('Access-Control-Allow-Origin', 'https://youyou.mprnl.fr');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  if (req.method === 'OPTIONS') return res.sendStatus(200);
+  next();
+});
+
 // ──────────────────────────────────────────────
 // Push notification routes
 // ──────────────────────────────────────────────
