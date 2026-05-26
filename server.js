@@ -299,6 +299,8 @@ app.post('/api/message', (req, res) => {
             if (err.statusCode === 410 || err.statusCode === 404) {
                 subscriptions = subscriptions.filter(s => s.endpoint !== sub.endpoint);
                 saveSubscriptions(subscriptions);
+            } else {
+                console.error('[push] Échec envoi notification:', err.statusCode || err.message);
             }
         });
     }
