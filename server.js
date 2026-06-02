@@ -62,6 +62,7 @@ function saveSubscriptions(subs) {
 }
 
 let subscriptions = loadSubscriptions();
+console.log(`[push] ${subscriptions.length} abonnement(s) au démarrage`);
 
 dotenv.config();
 
@@ -108,6 +109,21 @@ app.post('/api/push/subscribe', (req, res) => {
     if (!exists) {
         subscriptions.push(sub);
         saveSubscriptions(subscriptions);
+        console.log(`[push] Nouvel abonnement (${subscriptions.length} total)`);
+    }
+    res.json({ ok: true });
+});
+
+app.post('/api/push/unsubscribe', (req, res) => {
+    const sub = req.body;
+    if (!sub || !sub.endpoint) {
+        return res.status(400).json({ error: 'Abonnement invalide' });
+    }
+    const before = subscriptions.length;
+    subscriptions = subscriptions.filter(s => s.endpoint !== sub.endpoint);
+    if (subscriptions.length < before) {
+        saveSubscriptions(subscriptions);
+        console.log(`[push] Désabonnement (${subscriptions.length} restant(s))`);
     }
     res.json({ ok: true });
 });
@@ -298,16 +314,24 @@ app.post('/api/message', (req, res) => {
         title: '💌 Nouveau message',
         body: text.length > 80 ? text.slice(0, 80) + '…' : text,
     });
+
+    let succeeded = 0, failed = 0, expired = 0;
+
     for (const sub of subscriptions) {
         webPush.sendNotification(sub, pushPayload).catch(err => {
             if (err.statusCode === 410 || err.statusCode === 404) {
+                expired++;
                 subscriptions = subscriptions.filter(s => s.endpoint !== sub.endpoint);
                 saveSubscriptions(subscriptions);
-            } else {
-                console.error('[push] Échec envoi notification:', err.statusCode || err.message);
+                return;
             }
+            failed++;
+            console.error('[push] Échec envoi notification:', err.statusCode || err.message);
         });
+        succeeded++;
     }
+
+    console.log(`[push] Message envoyé via push : ${succeeded} tentatives, ${expired} expiré(s), ${failed} échec(s)`);
 
     res.json({ ok: true });
 });
