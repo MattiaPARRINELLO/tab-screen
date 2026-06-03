@@ -3402,7 +3402,9 @@
               });
             })
             .play();
-        } else if (isSongChanged) {
+        } else {
+          // Même morceau mais carte cachée (ex: après fallback de visibilitychange) :
+          // on repeuple le texte avant de réafficher la carte plus bas.
           trackEl.textContent = data.title || "Titre inconnu";
           artistEl.textContent = data.artist || "Artiste inconnu";
           setCoverWithFallback(data.cover, { preserveExistingOnMissing: true, songKey: nextSongKey });
