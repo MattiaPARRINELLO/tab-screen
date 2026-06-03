@@ -300,7 +300,7 @@ if (normalizedMessages.changed) saveMessages(messageHistory);
 
 let pendingMessage = messageHistory.find((msg) => !msg.dismissedAt) || null;
 
-app.post('/api/message', (req, res) => {
+app.post('/api/message', async (req, res) => {
     const text = (req.body.text || '').trim();
     if (!text) return res.status(400).json({ error: 'Message vide' });
     if (text.length > 500) return res.status(400).json({ error: 'Message trop long (500 caractères max)' });
@@ -469,6 +469,7 @@ function bestDeezerCover(item) {
 async function deezerSearch(query, title, artist) {
     const url = `https://api.deezer.com/search?q=${encodeURIComponent(query)}`;
     const resp = await fetchWithTimeout(url, 7000);
+    if (!resp.ok) { console.error('[cover] Deezer HTTP', resp.status); return ''; }
     const data = await resp.json();
     if (!data.data?.length) return '';
 
@@ -527,6 +528,7 @@ async function fetchCover(title, artist) {
     try {
         const url = `https://ws.audioscrobbler.com/2.0/?method=track.getInfo&api_key=${LASTFM_API_KEY}&artist=${encodeURIComponent(artist)}&track=${encodeURIComponent(title)}&format=json`;
         const resp = await fetchWithTimeout(url, 6000);
+        if (!resp.ok) { console.error('[cover] Last.fm HTTP', resp.status); return ''; }
         const data = await resp.json();
         const cover = data?.track?.album?.image?.find(img => img.size === 'extralarge')?.['#text'] || '';
         if (cover) console.log('[cover] Last.fm OK');
@@ -700,7 +702,7 @@ function captureLog(level, args) {
 // Rediriger console vers le buffer de debug
 ['log', 'warn', 'error', 'info'].forEach(lvl => {
     const orig = console[lvl];
-    console[lvl] = function () { captureLog(lvl, arguments); return orig.apply(console, arguments); };
+    console[lvl] = function () { captureLog(lvl, Array.from(arguments)); return orig.apply(console, arguments); };
 });
 
 app.post('/api/debug/log', (req, res) => {
