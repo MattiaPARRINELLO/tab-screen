@@ -858,6 +858,7 @@
         justify-content: flex-start;
         gap: calc(var(--gap-lg) * 1.1);
         padding: calc(var(--gap-lg) * 1.35);
+        opacity: 1 !important;
         background: linear-gradient(
           145deg,
           rgba(var(--album-r), var(--album-g), var(--album-b), 0.22) 0%,
@@ -1041,6 +1042,7 @@
         gap: var(--gap-md);
         align-items: center;
         flex-shrink: 0;
+        opacity: 1 !important;
         transition:
           transform 500ms var(--ease-spring),
           gap 400ms var(--ease-smooth),
@@ -1997,7 +1999,7 @@
         <!-- MUSIC INFO BOTTOM -->
         <div class="music-bottom">
           <div class="music-cover-wrapper">
-            <img id="cover" src="" alt="Cover" class="music-cover" />
+            <img id="cover" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 400'%3E%3Crect width='400' height='400' rx='42' fill='%23111827'/%3E%3C/svg%3E" alt="Cover" class="music-cover" />
           </div>
           <div class="music-info">
             <div class="music-track" id="track">Titre</div>
