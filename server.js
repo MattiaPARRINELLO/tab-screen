@@ -545,6 +545,22 @@ io.on('connection', socket => {
         // Propager la fermeture à tous les autres écrans ouverts
         socket.broadcast.emit('dismissMessage');
     });
+
+    // Le client demande explicitement l'état musique actuel
+    // (utile après visibilitychange sur tablette quand la position a sauté).
+    // On évite d'envoyer un musicData avec position >= duration car le client
+    // n'a pas de gestion propre pour ce cas → on envoie musicStateEnded à la place.
+    socket.on('requestMusicState', () => {
+        if (currentMusic.title) {
+            const elapsed = (Date.now() - (currentMusic.startTime || Date.now())) / 1000;
+            const adjustedPosition = currentMusic.position + elapsed;
+            if (adjustedPosition < currentMusic.duration) {
+                socket.emit('musicData', { ...currentMusic, position: adjustedPosition });
+                return;
+            }
+        }
+        socket.emit('musicStateEnded');
+    });
 });
 
 // ──────────────────────────────────────────────

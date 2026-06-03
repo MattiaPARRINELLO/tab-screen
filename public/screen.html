@@ -2729,6 +2729,7 @@
       let coverSwapToken = 0;
       let musicGeneration = 0;
       let songChangeInProgress = false;
+      let visibilitySyncTimer = null;
 
       // ========== TRANSITION ORCHESTRATOR ==========
       let activeTimelineId = 0;
@@ -3199,6 +3200,7 @@
 
       // Start or restart the progress interval (throttled to reduce CPU)
       function startProgressInterval() {
+        if (visibilitySyncTimer) { clearTimeout(visibilitySyncTimer); visibilitySyncTimer = null; }
         if (progressInterval) clearInterval(progressInterval);
         let pTicks = 0;
         progressInterval = setInterval(() => {
@@ -3242,6 +3244,7 @@
 
       socket.on("popupMessage", ({ text }) => showPopupMessage(text));
       socket.on("dismissMessage", () => messageOverlay.classList.remove("visible"));
+      socket.on("musicStateEnded", () => { if (!musicCard.classList.contains("hidden")) hideMusicCard(); });
 
       // ── Musique ────────────────────────────────────
       // Les events peuvent arriver en rafale (sans cover puis avec cover).
@@ -3460,6 +3463,7 @@
 
       function hideMusicCard() {
         if (songChangeInProgress) return;
+        if (visibilitySyncTimer) { clearTimeout(visibilitySyncTimer); visibilitySyncTimer = null; }
         const hideGen = musicGeneration;
         clearDeferredCoverFallback();
         clearCoverSwapState();
@@ -3559,10 +3563,28 @@
           }
         } else {
           document.body.classList.remove("paused-animations");
-          // restart progress and lyrics sync if needed
-          if (!progressInterval && !musicCard.classList.contains("hidden"))
-            startProgressInterval();
+          // Request fresh state from server instead of blindly restarting intervals
+          // with stale musicStartTime (which would overshoot the song duration
+          // after a long sleep and prematurely hide the card).
+          socket.emit("requestMusicState");
+          // Restart lyrics (stateless, safe to do immediately)
           if (!lyricsInterval && currentLyrics.length > 0) startLyricsSync();
+          // Progress interval: wait for server to reply via musicData/musicStateEnded.
+          // Fallback: if no reply after 2s, check progress and hide if song ended.
+          if (visibilitySyncTimer) clearTimeout(visibilitySyncTimer);
+          if (!progressInterval && !musicCard.classList.contains("hidden")) {
+            visibilitySyncTimer = setTimeout(() => {
+              visibilitySyncTimer = null;
+              if (progressInterval) return;
+              const elapsed = (Date.now() - musicStartTime) / 1000;
+              const pos = musicInitialPosition + elapsed;
+              if (musicDuration > 0 && pos >= musicDuration - 0.5) {
+                hideMusicCard();
+              } else {
+                startProgressInterval();
+              }
+            }, 2000);
+          }
         }
       });
 
