@@ -194,10 +194,8 @@
             feedback.className = "feedback error";
           }
         } catch {
-          feedback.textContent = "Message mis en file d'attente";
-          feedback.className = "feedback success";
-          textarea.value = "";
-          counter.textContent = "0 / 500";
+          feedback.textContent = "Erreur réseau — vérifie la connexion";
+          feedback.className = "feedback error";
         } finally {
           btn.disabled = false;
         }

@@ -2023,6 +2023,113 @@
 
     <script src="/socket.io/socket.io.js"></script>
     <script>
+      // ========== SERVICE WORKER ==========
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/sw.js').catch(function(e) {
+          console.warn('[sw] Registration failed:', e.message);
+        });
+      }
+
+      // ========== DEBUG SYSTEM (console-less devices) ==========
+      const DEBUG = {
+        buffer: [],
+        maxLen: 200,
+        overlay: null,
+        visible: false,
+        _origConsole: {},
+      };
+
+      function debugCapture(level) {
+        return function () {
+          const args = Array.from(arguments);
+          const msg = args.map(a => typeof a === 'object' ? JSON.stringify(a) : String(a)).join(' ');
+          DEBUG.buffer.push({ level: level, msg: msg, ts: Date.now() });
+          if (DEBUG.buffer.length > DEBUG.maxLen) DEBUG.buffer.splice(0, DEBUG.buffer.length - DEBUG.maxLen);
+          DEBUG._origConsole[level].apply(console, arguments);
+          // Envoyer au serveur les erreurs
+          if (level === 'error' || level === 'warn') {
+            try {
+              fetch('/api/debug/log', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ level: level, message: msg }),
+              }).catch(function () {});
+            } catch (e) {}
+          }
+        };
+      }
+
+      DEBUG._origConsole = { log: console.log, warn: console.warn, error: console.error, info: console.info };
+      console.log = debugCapture('log');
+      console.warn = debugCapture('warn');
+      console.error = debugCapture('error');
+      console.info = debugCapture('info');
+
+      window.onerror = function (message, source, lineno, colno, error) {
+        console.error('[window.onerror]', message, 'at', source + ':' + lineno);
+      };
+
+      window.onunhandledrejection = function (event) {
+        console.error('[unhandledRejection]', event.reason && (event.reason.message || event.reason));
+      };
+
+      function debugCreateOverlay() {
+        if (DEBUG.overlay) return;
+        var o = document.createElement('div');
+        o.id = 'debugOverlay';
+        o.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;z-index:99999;background:rgba(5,5,15,0.92);color:#eef2f7;font-family:monospace;font-size:12px;overflow-y:auto;display:none;padding:48px 16px 16px;';
+        o.innerHTML = '<div style="position:fixed;top:0;left:0;right:0;padding:8px 16px;background:#0a0e14;border-bottom:1px solid rgba(255,255,255,0.08);display:flex;gap:8px;z-index:1;"><button id="debugCloseBtn" style="background:#a78bfa;border:none;color:#fff;padding:4px 12px;border-radius:6px;cursor:pointer;font-family:inherit;">✕ Fermer</button><button id="debugClearBtn" style="background:transparent;border:1px solid rgba(255,255,255,0.15);color:#7e8a9e;padding:4px 12px;border-radius:6px;cursor:pointer;font-family:inherit;">Effacer</button><span style="flex:1;text-align:right;color:#3d4a5c;padding:4px 0;"></span></div><div id="debugLogs" style="padding:4px 0;"></div>';
+        document.body.appendChild(o);
+        DEBUG.overlay = o;
+
+        document.getElementById('debugCloseBtn').onclick = debugToggleOverlay;
+        document.getElementById('debugClearBtn').onclick = function () { DEBUG.buffer = []; debugRenderLogs(); };
+      }
+
+      function debugRenderLogs() {
+        var container = document.getElementById('debugLogs');
+        if (!container) return;
+        var html = '';
+        var logs = DEBUG.buffer.slice(-100);
+        for (var i = logs.length - 1; i >= 0; i--) {
+          var l = logs[i];
+          var color = l.level === 'error' ? '#f87171' : l.level === 'warn' ? '#fbbf24' : l.level === 'info' ? '#60a5fa' : '#7e8a9e';
+          html += '<div style="padding:3px 0;border-bottom:1px solid rgba(255,255,255,0.03);color:' + color + ';"><span style="opacity:0.4;margin-right:8px;">' + new Date(l.ts).toLocaleTimeString() + '</span>' + l.msg.replace(/</g, '&lt;') + '</div>';
+        }
+        container.innerHTML = html || '<div style="color:#3d4a5c;text-align:center;padding:40px;">Aucun log</div>';
+      }
+
+      function debugToggleOverlay() {
+        DEBUG.visible = !DEBUG.visible;
+        if (DEBUG.visible) {
+          debugCreateOverlay();
+          DEBUG.overlay.style.display = 'block';
+          debugRenderLogs();
+          // auto-refresh
+          if (DEBUG._refreshTimer) clearInterval(DEBUG._refreshTimer);
+          DEBUG._refreshTimer = setInterval(debugRenderLogs, 2000);
+        } else {
+          DEBUG.overlay.style.display = 'none';
+          if (DEBUG._refreshTimer) { clearInterval(DEBUG._refreshTimer); DEBUG._refreshTimer = null; }
+        }
+      }
+
+      // Gesture: 5 taps in 3 seconds on the top-left corner to open debug
+      (function () {
+        var tapCount = 0, tapTimer = null;
+        document.addEventListener('touchstart', function (e) {
+          if (e.changedTouches[0].clientX > 80 || e.changedTouches[0].clientY > 80) { tapCount = 0; return; }
+          tapCount++;
+          if (tapTimer) clearTimeout(tapTimer);
+          tapTimer = setTimeout(function () { tapCount = 0; }, 3000);
+          if (tapCount >= 5) { tapCount = 0; debugToggleOverlay(); }
+        });
+        // Keyboard shortcut: Ctrl+Shift+D
+        document.addEventListener('keydown', function (e) {
+          if (e.ctrlKey && e.shiftKey && e.key === 'D') { e.preventDefault(); debugToggleOverlay(); }
+        });
+      })();
+
       const socket = io();
 
       // ========== PERFORMANCE TIER SYSTEM ==========

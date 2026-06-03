@@ -72,6 +72,7 @@ const LASTFM_API_KEY = process.env.LASTFM_API_KEY;
 const VILLE = process.env.VILLE || 'Franconville';
 const VILLE_SHORT = process.env.VILLE_SHORT || VILLE;
 const NO_LYRICS_PATH = path.join(__dirname, 'cache', 'no-lyrics.json');
+const CORS_ORIGIN = process.env.CORS_ORIGIN || 'https://youyou.mprnl.fr';
 
 if (!OPENWEATHER_API_KEY) console.warn('[config] ⚠  OPENWEATHER_API_KEY manquante');
 if (!LASTFM_API_KEY) console.warn('[config] ⚠  LASTFM_API_KEY manquante');
@@ -83,9 +84,13 @@ const io = new Server(server);
 app.use(express.static('public'));
 app.use(express.json());
 
-// CORS pour le frontend youyou.mprnl.fr
+// CORS
 app.use((req, res, next) => {
-  res.setHeader('Access-Control-Allow-Origin', 'https://youyou.mprnl.fr');
+  const origin = req.headers.origin;
+  if (origin && (origin === CORS_ORIGIN || origin.startsWith('http://localhost') || origin.startsWith('http://127.0.0.1'))) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+  }
+  res.setHeader('Vary', 'Origin');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   if (req.method === 'OPTIONS') return res.sendStatus(200);
@@ -201,6 +206,7 @@ async function getCoords() {
 
     const url = `https://api.openweathermap.org/geo/1.0/direct?q=${encodeURIComponent(VILLE)}&limit=1&appid=${OPENWEATHER_API_KEY}`;
     const res = await fetchWithTimeout(url, 6000);
+    if (!res.ok) throw new Error(`OpenWeather geocoding HTTP ${res.status}`);
     const data = await res.json();
 
     if (!Array.isArray(data) || !data.length) throw new Error(`Ville introuvable : ${VILLE}`);
@@ -267,10 +273,12 @@ function saveMessages(msgs) {
 }
 
 function normalizeMessageHistory(msgs) {
+    if (!Array.isArray(msgs)) return { normalized: [], changed: false };
     let hasActiveMessage = false;
     let changed = false;
 
     const normalized = msgs.map((msg) => {
+        if (!msg || typeof msg !== 'object') { changed = true; return null; }
         if (msg.dismissedAt) return msg;
 
         if (!hasActiveMessage) {
@@ -280,7 +288,7 @@ function normalizeMessageHistory(msgs) {
 
         changed = true;
         return { ...msg, dismissedAt: msg.sentAt || Date.now() };
-    });
+    }).filter(Boolean);
 
     return { normalized, changed };
 }
@@ -315,23 +323,30 @@ app.post('/api/message', (req, res) => {
         body: text.length > 80 ? text.slice(0, 80) + '…' : text,
     });
 
-    let succeeded = 0, failed = 0, expired = 0;
+    const results = await Promise.allSettled(
+        subscriptions.map(sub =>
+            webPush.sendNotification(sub, pushPayload).catch(err => {
+                if (err.statusCode === 410 || err.statusCode === 404) {
+                    return { expired: true, endpoint: sub.endpoint };
+                }
+                throw err;
+            })
+        )
+    );
 
-    for (const sub of subscriptions) {
-        webPush.sendNotification(sub, pushPayload).catch(err => {
-            if (err.statusCode === 410 || err.statusCode === 404) {
-                expired++;
-                subscriptions = subscriptions.filter(s => s.endpoint !== sub.endpoint);
-                saveSubscriptions(subscriptions);
-                return;
-            }
-            failed++;
-            console.error('[push] Échec envoi notification:', err.statusCode || err.message);
-        });
-        succeeded++;
+    const expiredEndpoints = results
+        .filter(r => r.status === 'fulfilled' && r.value?.expired)
+        .map(r => r.value.endpoint);
+
+    if (expiredEndpoints.length > 0) {
+        subscriptions = subscriptions.filter(s => !expiredEndpoints.includes(s.endpoint));
+        saveSubscriptions(subscriptions);
     }
 
-    console.log(`[push] Message envoyé via push : ${succeeded} tentatives, ${expired} expiré(s), ${failed} échec(s)`);
+    const succeeded = results.filter(r => r.status === 'fulfilled' && !r.value?.expired).length;
+    const failed = results.filter(r => r.status === 'rejected').length;
+
+    console.log(`[push] Message envoyé via push : ${succeeded} envoyé(s), ${expiredEndpoints.length} expiré(s), ${failed} échec(s)`);
 
     res.json({ ok: true });
 });
@@ -352,7 +367,9 @@ app.get('/api/weather', async (req, res) => {
         const { lat, lon } = await getCoords();
         const url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=metric&lang=fr&appid=${OPENWEATHER_API_KEY}`;
         const resp = await fetchWithTimeout(url, 6000);
+        if (!resp.ok) throw new Error(`OpenWeather weather HTTP ${resp.status}`);
         const data = await resp.json();
+        if (!data.weather || !data.weather[0]) throw new Error('Réponse météo invalide');
 
         const iconCode = data.weather[0].icon;
         const payload = {
@@ -379,7 +396,9 @@ app.get('/api/forecast', async (req, res) => {
         const { lat, lon } = await getCoords();
         const url = `https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&units=metric&lang=fr&appid=${OPENWEATHER_API_KEY}`;
         const resp = await fetchWithTimeout(url, 6000);
+        if (!resp.ok) throw new Error(`OpenWeather forecast HTTP ${resp.status}`);
         const data = await resp.json();
+        if (!data.list || !Array.isArray(data.list)) throw new Error('Réponse prévisions invalide');
 
         const list = data.list.slice(0, 5).map(f => ({
             dt: f.dt,
@@ -441,7 +460,9 @@ function normalizeTitle(title) {
 
 /** Meilleure cover disponible parmi les champs Deezer */
 function bestDeezerCover(item) {
-    return item.album.cover_xl || item.album.cover_big || item.album.cover_medium || '';
+    const album = item && item.album;
+    if (!album) return '';
+    return album.cover_xl || album.cover_big || album.cover_medium || '';
 }
 
 /** Cherche sur Deezer avec une requête donnée, retourne la meilleure cover */
@@ -661,6 +682,49 @@ app.post('/api/nolyrics/reset', async (req, res) => {
         console.error('[nolyrics/reset]', err.message);
         res.status(500).json({ ok: false });
     }
+});
+
+// ──────────────────────────────────────────────
+// Debug / logs distants
+// ──────────────────────────────────────────────
+
+const DEBUG_LOGS = [];
+const MAX_DEBUG_LOGS = 500;
+
+function captureLog(level, args) {
+    const entry = { level, msg: args.map(a => typeof a === 'object' ? JSON.stringify(a) : String(a)).join(' '), ts: Date.now() };
+    DEBUG_LOGS.push(entry);
+    if (DEBUG_LOGS.length > MAX_DEBUG_LOGS) DEBUG_LOGS.splice(0, DEBUG_LOGS.length - MAX_DEBUG_LOGS);
+}
+
+// Rediriger console vers le buffer de debug
+['log', 'warn', 'error', 'info'].forEach(lvl => {
+    const orig = console[lvl];
+    console[lvl] = function () { captureLog(lvl, arguments); return orig.apply(console, arguments); };
+});
+
+app.post('/api/debug/log', (req, res) => {
+    const { level, message, stack } = req.body || {};
+    if (message) captureLog(level || 'client', [message + (stack ? '\n' + stack : '')]);
+    res.json({ ok: true });
+});
+
+app.get('/api/debug/logs', (req, res) => {
+    const n = parseInt(req.query.n) || 100;
+    res.json({ logs: DEBUG_LOGS.slice(-n) });
+});
+
+// ──────────────────────────────────────────────
+// Process-level error handlers
+// ──────────────────────────────────────────────
+
+process.on('unhandledRejection', (reason) => {
+    console.error('[process] Unhandled Rejection:', reason instanceof Error ? reason.message : reason);
+});
+
+process.on('uncaughtException', (err) => {
+    console.error('[process] Uncaught Exception:', err.message);
+    // Ne pas quitter — laisser Express continuer à servir
 });
 
 // ──────────────────────────────────────────────
