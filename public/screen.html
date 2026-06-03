@@ -2030,6 +2030,13 @@
         navigator.serviceWorker.register('/sw.js').catch(function(e) {
           console.warn('[sw] Registration failed:', e.message);
         });
+        // Auto-reload when SW updates (fresh HTML after cache bump)
+        navigator.serviceWorker.addEventListener('message', function(event) {
+          if (event.data && event.data.action === 'sw-updated') {
+            console.log('[sw] New version detected, reloading…');
+            window.location.reload();
+          }
+        });
       }
 
       // ========== DEBUG SYSTEM (console-less devices) ==========

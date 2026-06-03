@@ -1,4 +1,4 @@
-const CACHE_NAME = 'tab-screen-v1';
+const CACHE_NAME = 'tab-screen-v2';
 const PRECACHE_URLS = [
   '/message.html',
   '/manifest.json',
@@ -6,6 +6,8 @@ const PRECACHE_URLS = [
   '/icons/icon-192.png',
   '/icons/icon-512.png'
 ];
+
+const HTML_URLS = ['/', '/screen', '/screen/low-end', '/index.html', '/screen.html'];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -19,25 +21,54 @@ self.addEventListener('activate', (event) => {
     caches.keys().then((names) =>
       Promise.all(names.map((n) => n !== CACHE_NAME ? caches.delete(n) : null))
     ).then(() => self.clients.claim())
+    .then(() => {
+      // Notify all clients to reload (fresh HTML after SW update)
+      return self.clients.matchAll().then(function(clients) {
+        clients.forEach(function(client) { client.postMessage({ action: 'sw-updated' }); });
+      });
+    })
   );
 });
 
 self.addEventListener('fetch', (event) => {
   const { request } = event;
-  if (request.method !== 'GET' || !request.url.startsWith(self.location.origin) || request.url.includes('/api/')) {
+  const url = new URL(request.url);
+
+  // API requests, external, non-GET: network only
+  if (request.method !== 'GET' || !url.origin.startsWith(self.location.origin) || url.pathname.startsWith('/api/')) {
     event.respondWith(fetch(request));
     return;
   }
-  event.respondWith(
-    caches.match(request).then((cached) => cached || fetch(request).then((response) => {
-      const clone = response.clone();
-      caches.open(CACHE_NAME).then((cache) => {
-        if (response.ok && request.url.startsWith(self.location.origin)) {
+
+  // HTML pages: network-first (always get latest)
+  if (HTML_URLS.includes(url.pathname) || url.pathname.endsWith('.html')) {
+    event.respondWith(
+      fetch(request).then(function(response) {
+        var clone = response.clone();
+        caches.open(CACHE_NAME).then(function(cache) {
           cache.put(request, clone);
-        }
+        });
+        return response;
+      }).catch(function() {
+        return caches.match(request).then(function(cached) {
+          return cached || new Response('', { status: 503 });
+        });
+      })
+    );
+    return;
+  }
+
+  // Static assets: cache-first
+  event.respondWith(
+    caches.match(request).then(function(cached) {
+      return cached || fetch(request).then(function(response) {
+        var clone = response.clone();
+        caches.open(CACHE_NAME).then(function(cache) {
+          cache.put(request, clone);
+        });
+        return response;
       });
-      return response;
-    }))
+    })
   );
 });
 
