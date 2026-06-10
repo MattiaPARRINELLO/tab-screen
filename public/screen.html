@@ -3466,23 +3466,25 @@
           musicDurationEl.textContent = formatTime(musicDuration);
 
         // --- songChange timeline ---
+        const staggerTargets = [
+          { el: lyricsContainer, delayOut: 0, delayIn: 60 },
+          { el: coverEl, delayOut: 30, delayIn: 0 },
+          { el: trackEl, delayOut: 50, delayIn: 30 },
+          { el: artistEl, delayOut: 65, delayIn: 50 },
+          { el: musicBottomEl.querySelector(".music-progress-row"), delayOut: 80, delayIn: 70 },
+        ].filter((t) => t.el);
+
+        // Cancel any stale animations (e.g. frozen by a previous hideMusicCard race)
+        // Always run, even in the else branch, to clear leftover blur/opacity.
+        staggerTargets.forEach((t) => {
+          if (t.el) t.el.getAnimations().forEach((a) => a.cancel());
+        });
+        musicCard.getAnimations().forEach((a) => a.cancel());
+
         songChangeInProgress = true;
         try {
         if (isSongChanged && canAnimateSongChange()) {
           const prevProgress = parseFloat(progressBar.style.width) || 0;
-
-          const staggerTargets = [
-            { el: lyricsContainer, delayOut: 0, delayIn: 60 },
-            { el: coverEl, delayOut: 30, delayIn: 0 },
-            { el: trackEl, delayOut: 50, delayIn: 30 },
-            { el: artistEl, delayOut: 65, delayIn: 50 },
-            { el: musicBottomEl.querySelector(".music-progress-row"), delayOut: 80, delayIn: 70 },
-          ].filter((t) => t.el);
-
-          // Cancel any stale animations (e.g. frozen by a previous hideMusicCard race)
-          staggerTargets.forEach((t) => {
-            if (t.el) t.el.getAnimations().forEach((a) => a.cancel());
-          });
 
           await createTimeline()
             .phase('content_out', 0, 250, () => {
