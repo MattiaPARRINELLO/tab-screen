@@ -237,6 +237,27 @@ const weatherIconMap = {
 // ──────────────────────────────────────────────
 
 let currentMusic = { title: '', artist: '', position: 0, duration: 0 };
+const LAST_MUSIC_PATH = path.join(__dirname, 'cache', 'last-music-end.json');
+let lastMusicEndAt = null;
+
+function loadLastMusicEndAt() {
+    try {
+        if (fs.existsSync(LAST_MUSIC_PATH)) {
+            const data = JSON.parse(fs.readFileSync(LAST_MUSIC_PATH, 'utf8'));
+            return data.lastMusicEndAt || null;
+        }
+    } catch (e) { /* ignore */ }
+    return null;
+}
+
+function saveLastMusicEndAt() {
+    try {
+        fs.mkdirSync(path.dirname(LAST_MUSIC_PATH), { recursive: true });
+        fs.writeFileSync(LAST_MUSIC_PATH, JSON.stringify({ lastMusicEndAt }));
+    } catch (e) { console.error('[music] Erreur écriture lastMusicEndAt:', e.message); }
+}
+
+lastMusicEndAt = loadLastMusicEndAt();
 let musicFetchGen = 0;
 
 // ──────────────────────────────────────────────
@@ -426,6 +447,9 @@ app.post('/api/music', async (req, res) => {
 
     if (!title || !artist) return res.sendStatus(400);
 
+    // Si un morceau était en cours, enregistrer quand il s'est arrêté
+    if (currentMusic.title) { lastMusicEndAt = Date.now(); saveLastMusicEndAt(); }
+
     const fetchGen = ++musicFetchGen;
     const startTime = Date.now();
 
@@ -551,6 +575,9 @@ io.on('connection', socket => {
         const adjustedPosition = currentMusic.position + elapsed;
         if (adjustedPosition < currentMusic.duration) {
             socket.emit('musicData', { ...currentMusic, position: adjustedPosition });
+        } else if (lastMusicEndAt === null) {
+            lastMusicEndAt = (currentMusic.startTime || Date.now()) + (currentMusic.duration - currentMusic.position) * 1000;
+            saveLastMusicEndAt();
         }
     }
 
@@ -582,8 +609,12 @@ io.on('connection', socket => {
                 socket.emit('musicData', { ...currentMusic, position: adjustedPosition });
                 return;
             }
+            if (lastMusicEndAt === null) {
+                lastMusicEndAt = (currentMusic.startTime || Date.now()) + (currentMusic.duration - currentMusic.position) * 1000;
+                saveLastMusicEndAt();
+            }
         }
-        socket.emit('musicStateEnded');
+        socket.emit('musicStateEnded', { lastMusicEndAt });
     });
 });
 

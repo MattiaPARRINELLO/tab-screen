@@ -650,6 +650,8 @@
       var currentLyrics = [];
       var activeLyricIndex = -1;
       var musicGeneration = 0;
+      var lastMusicEndAt = localStorage.getItem("lastMusicEndAt") ? Number(localStorage.getItem("lastMusicEndAt")) : null;
+      var idleTimer = null;
 
       // ========== COLOR EXTRACTION ==========
       function rgbToHsl(r, g, b) {
@@ -914,6 +916,8 @@
           progressBar.style.width = pct + "%";
           if (musicDuration > 0 && pos >= musicDuration) {
             clearInterval(progressInterval);
+            lastMusicEndAt = Date.now();
+            localStorage.setItem("lastMusicEndAt", lastMusicEndAt);
             showIdle();
           }
         }, 250);
@@ -928,6 +932,9 @@
 
       // ========== SHOW/HIDE ==========
       function showMusic(data) {
+        lastMusicEndAt = null;
+        localStorage.removeItem("lastMusicEndAt");
+        if (idleTimer) { clearInterval(idleTimer); idleTimer = null; }
         idleState.classList.add("hidden");
         musicCard.classList.add("visible");
 
@@ -960,6 +967,35 @@
         idleState.classList.remove("hidden");
         progressBar.style.width = "0%";
         if (musicDurationEl) musicDurationEl.textContent = "0:00";
+        updateIdleTime();
+        if (idleTimer) clearInterval(idleTimer);
+        idleTimer = setInterval(updateIdleTime, 30000);
+      }
+
+      // ========== IDLE TIME DISPLAY ==========
+      function updateIdleTime() {
+        var subEl = document.querySelector(".idle-sub");
+        if (!subEl) return;
+        if (lastMusicEndAt) {
+          var elapsed = Math.floor((Date.now() - lastMusicEndAt) / 1000);
+          var text;
+          if (elapsed < 60) {
+            text = "Aucune musique depuis " + elapsed + " s";
+          } else if (elapsed < 3600) {
+            text = "Aucune musique depuis " + Math.floor(elapsed / 60) + " min";
+          } else if (elapsed < 86400) {
+            var h = Math.floor(elapsed / 3600);
+            var m = Math.floor((elapsed % 3600) / 60);
+            text = "Aucune musique depuis " + h + " h " + m + " min";
+          } else {
+            var d = Math.floor(elapsed / 86400);
+            var h = Math.floor((elapsed % 86400) / 3600);
+            text = "Aucune musique depuis " + d + " j " + h + " h";
+          }
+          subEl.textContent = text;
+        } else {
+          subEl.textContent = "Dès qu'un morceau sera joué, il apparaîtra ici";
+        }
       }
 
       // ========== SOCKET EVENTS ==========
@@ -973,8 +1009,13 @@
         });
       });
 
-      socket.on("musicStateEnded", function () {
+      socket.on("musicStateEnded", function (data) {
+        if (data && data.lastMusicEndAt) {
+          lastMusicEndAt = data.lastMusicEndAt;
+          localStorage.setItem("lastMusicEndAt", lastMusicEndAt);
+        }
         if (musicCard.classList.contains("visible")) showIdle();
+        updateIdleTime();
       });
 
       // Request initial state
@@ -1015,6 +1056,14 @@
       document.addEventListener("visibilitychange", function () {
         if (!document.hidden) {
           socket.emit("requestMusicState");
+        }
+      });
+
+      document.addEventListener("DOMContentLoaded", function () {
+        if (lastMusicEndAt) {
+          updateIdleTime();
+          if (idleTimer) clearInterval(idleTimer);
+          idleTimer = setInterval(updateIdleTime, 30000);
         }
       });
     </script>
