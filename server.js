@@ -248,6 +248,7 @@ app.get('/screen', (req, res) => res.sendFile(path.join(__dirname, 'public', 'sc
 app.get('/screen/low-end', (req, res) => res.sendFile(path.join(__dirname, 'public', 'screen.html')));
 app.get('/cache', (req, res) => res.sendFile(path.join(__dirname, 'public', 'cache.html')));
 app.get('/message', (req, res) => res.sendFile(path.join(__dirname, 'public', 'message.html')));
+app.get('/music', (req, res) => res.sendFile(path.join(__dirname, 'public', 'music.html')));
 app.get('/historique', (req, res) => res.sendFile(path.join(__dirname, 'public', 'historique.html')));
 
 // ──────────────────────────────────────────────
