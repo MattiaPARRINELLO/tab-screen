@@ -744,19 +744,23 @@
 
       // ========== COVER ==========
       var lastCoverUrl = "";
+      var coverGen = 0;
 
       function setCover(src) {
         if (!src || src === lastCoverUrl) return;
         lastCoverUrl = src;
         coverEl.classList.add("fading");
+        var gen = ++coverGen;
         var preload = new Image();
         preload.crossOrigin = "Anonymous";
         preload.onload = function () {
+          if (gen !== coverGen) return;
           coverEl.src = src;
           setTimeout(function () { coverEl.classList.remove("fading"); }, 80);
           applyAlbumColors(preload);
         };
         preload.onerror = function () {
+          if (gen !== coverGen) return;
           coverEl.classList.remove("fading");
         };
         preload.src = src;
