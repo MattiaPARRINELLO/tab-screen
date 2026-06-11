@@ -2225,7 +2225,11 @@
             perfEvaluateFps(now);
           }
 
-          requestAnimationFrame(tick);
+          if (PERF.tier < 3) {
+            requestAnimationFrame(tick);
+          } else {
+            setTimeout(function () { requestAnimationFrame(tick); }, 120);
+          }
         }
 
         requestAnimationFrame(tick);
@@ -3042,20 +3046,6 @@
       }
 
       function applyAlbumColors(img) {
-        if (PERF.tier >= 4) {
-          const root = document.documentElement;
-          root.style.setProperty("--album-r", "78");
-          root.style.setProperty("--album-g", "205");
-          root.style.setProperty("--album-b", "196");
-          root.style.setProperty("--album-ar", "167");
-          root.style.setProperty("--album-ag", "139");
-          root.style.setProperty("--album-ab", "250");
-          document.body.classList.add("music-theme-active");
-          albumColorWash.classList.add("active");
-          document.querySelectorAll(".bg-orb").forEach(function(o) { o.classList.add("active"); });
-          return;
-        }
-
         const colorThief = new ColorThief();
         const palette = colorThief.getPalette(img, 8, 1);
 
