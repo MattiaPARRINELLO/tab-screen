@@ -397,12 +397,17 @@
           var(--shadow-md),
           0 1px 0 rgba(255, 255, 255, 0.05) inset,
           0 0 0 0.5px rgba(255, 255, 255, 0.04) inset;
-    overflow: hidden;
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    min-height: 0;
-    z-index: 1;
+        overflow: hidden;
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+        z-index: 1;
+      }
+
+      #timeCard, #weatherCard, #forecastCard {
+        content-visibility: auto;
+        contain-intrinsic-size: 200px;
       }
 
       /* Inner ambient light — top-left corner glow */
