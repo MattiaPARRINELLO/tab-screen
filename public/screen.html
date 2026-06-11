@@ -2870,13 +2870,11 @@
                 try { p.callback(); } catch (e) {}
               }, p.delayMs);
             });
+            // La promesse se résout TOUJOURS après maxEnd, même si
+            // activeTimelineId a changé (évite de bloquer handleMusicData
+            // et de coincer songChangeInProgress à true).
             return new Promise((resolve) => {
-              setTimeout(() => {
-                if (activeTimelineId === id) {
-                  activeTimelineId = 0;
-                  resolve();
-                }
-              }, maxEnd);
+              setTimeout(resolve, maxEnd + 50);
             });
           }
         };
@@ -3281,6 +3279,21 @@
           clearDeferredCoverFallback();
         }
 
+        const staggerTargets = [
+          { el: lyricsContainer, delayOut: 0, delayIn: 60 },
+          { el: coverEl, delayOut: 30, delayIn: 0 },
+          { el: trackEl, delayOut: 50, delayIn: 30 },
+          { el: artistEl, delayOut: 65, delayIn: 50 },
+          { el: musicBottomEl.querySelector(".music-progress-row"), delayOut: 80, delayIn: 70 },
+        ].filter((t) => t.el);
+
+        // Cancel any stale WAAPI/residual animations before anything else,
+        // so even the resync branch starts from a clean visual state.
+        staggerTargets.forEach((t) => {
+          if (t.el) t.el.getAnimations().forEach((a) => a.cancel());
+        });
+        musicCard.getAnimations().forEach((a) => a.cancel());
+
         // Même morceau déjà visible : cover ET/OU synchronisation position
         if (!isSongChanged && !musicCard.classList.contains("hidden")) {
           if (data.cover) {
@@ -3340,6 +3353,13 @@
             }
           }
 
+          // Si la carte est visible mais n'a pas encore `entered` (ex: cardEnter
+          // annulée par le cleanup ci-dessus), on le force pour éviter un blur
+          // résiduel.
+          if (!musicCard.classList.contains("entered")) {
+            musicCard.classList.add("entered");
+          }
+
           return;
         }
 
@@ -3364,27 +3384,15 @@
           musicDurationEl.textContent = formatTime(musicDuration);
 
         // --- songChange timeline ---
-        const staggerTargets = [
-          { el: lyricsContainer, delayOut: 0, delayIn: 60 },
-          { el: coverEl, delayOut: 30, delayIn: 0 },
-          { el: trackEl, delayOut: 50, delayIn: 30 },
-          { el: artistEl, delayOut: 65, delayIn: 50 },
-          { el: musicBottomEl.querySelector(".music-progress-row"), delayOut: 80, delayIn: 70 },
-        ].filter((t) => t.el);
-
-        // Cancel any stale animations (e.g. frozen by a previous hideMusicCard race)
-        // Always run, even in the else branch, to clear leftover blur/opacity.
-        staggerTargets.forEach((t) => {
-          if (t.el) t.el.getAnimations().forEach((a) => a.cancel());
-        });
-        musicCard.getAnimations().forEach((a) => a.cancel());
-
         songChangeInProgress = true;
         try {
         if (isSongChanged && canAnimateSongChange()) {
           const prevProgress = parseFloat(progressBar.style.width) || 0;
 
-          await createTimeline()
+          // Timeout de sécurité : si la timeline ne se résout pas pour une
+          // raison quelconque, on force la suite après 3s pour éviter de
+          // bloquer songChangeInProgress.
+          const timelinePromise = createTimeline()
             .phase('content_out', 0, 250, () => {
               staggerTargets.forEach((t) => {
                 t.el.animate(
@@ -3418,6 +3426,11 @@
               });
             })
             .play();
+
+          await Promise.race([
+            timelinePromise,
+            new Promise((resolve) => setTimeout(resolve, 3000)),
+          ]);
         } else {
           // Même morceau mais carte cachée (ex: après fallback de visibilitychange) :
           // on repeuple le texte avant de réafficher la carte plus bas.
@@ -3435,14 +3448,22 @@
             if (syncedLyrics) {
               const lyrics = parseLRC(syncedLyrics);
               if (lyrics.length > 0) {
-                renderLyrics(lyrics);
-                startLyricsSync();
+                try {
+                  renderLyrics(lyrics);
+                  startLyricsSync();
+                } catch (e) {
+                  setLyricsState("none");
+                }
               } else {
                 setLyricsState("none");
               }
+            } else {
+              setLyricsState("none");
             }
           },
-        ).catch(() => {});
+        ).catch(() => {
+          if (currentSongKey === songKeyAtFetch) setLyricsState("none");
+        });
 
         // Extract and apply album colors
         if (data.cover) {
@@ -3584,6 +3605,11 @@
           }
         } else {
           document.body.classList.remove("paused-animations");
+          // Si la carte est visible sans `entered`, on le force pour éviter
+          // que cardEnter ne reste figé (blur résiduel).
+          if (!musicCard.classList.contains("hidden") && !musicCard.classList.contains("entered")) {
+            musicCard.classList.add("entered");
+          }
           // Request fresh state from server instead of blindly restarting intervals
           // with stale musicStartTime (which would overshoot the song duration
           // after a long sleep and prematurely hide the card).
