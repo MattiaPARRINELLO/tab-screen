@@ -3050,9 +3050,21 @@
         return hslToRgb(h, s, l);
       }
 
+      function downscaleImage(img, maxSize) {
+        const canvas = document.createElement("canvas");
+        const scale = Math.min(maxSize / img.naturalWidth, maxSize / img.naturalHeight, 1);
+        canvas.width = Math.round(img.naturalWidth * scale);
+        canvas.height = Math.round(img.naturalHeight * scale);
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        return canvas;
+      }
+
       function applyAlbumColors(img) {
+        if (PERF.tier >= 4) return;
         const colorThief = new ColorThief();
-        const palette = colorThief.getPalette(img, 8, 1);
+        const srcImg = PERF.tier >= 3 ? downscaleImage(img, 32) : img;
+        const palette = colorThief.getPalette(srcImg, 8, 1);
 
         const [pr, pg, pb] = pickVibrantColor(palette);
         const [ph] = rgbToHsl(pr, pg, pb);
