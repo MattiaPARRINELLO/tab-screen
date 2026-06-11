@@ -3050,20 +3050,6 @@
         return hslToRgb(h, s, l);
       }
 
-      function downscaleImage(img, maxSize) {
-        const w = img.naturalWidth || img.width || 0;
-        const h = img.naturalHeight || img.height || 0;
-        if (!w || !h) return null;
-        const canvas = document.createElement("canvas");
-        const scale = Math.min(maxSize / w, maxSize / h, 1);
-        canvas.width = Math.round(w * scale);
-        canvas.height = Math.round(h * scale);
-        if (!canvas.width || !canvas.height) return null;
-        const ctx = canvas.getContext("2d");
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        return canvas;
-      }
-
       function setAlbumColorVars(pr, pg, pb, ar, ag, ab) {
         const root = document.documentElement;
         root.style.setProperty("--album-r", pr);
@@ -3080,23 +3066,12 @@
       function applyAlbumColors(img) {
         const colorThief = new ColorThief();
         try {
-          const smallSrc = downscaleImage(img, 32);
-          if (smallSrc) {
-            const quickPalette = colorThief.getPalette(smallSrc, 8, 1);
-            const [pr, pg, pb] = pickVibrantColor(quickPalette);
-            const [ph] = rgbToHsl(pr, pg, pb);
-            const accent = pickAccentColor(quickPalette, ph);
-            setAlbumColorVars(pr, pg, pb, ...(accent ?? [pr, pg, pb]));
-          } else {
-            const fallbackPalette = colorThief.getPalette(img, 8, 1);
-            const [pr, pg, pb] = pickVibrantColor(fallbackPalette);
-            const [ph] = rgbToHsl(pr, pg, pb);
-            const accent = pickAccentColor(fallbackPalette, ph);
-            setAlbumColorVars(pr, pg, pb, ...(accent ?? [pr, pg, pb]));
-          }
-        } catch (e) {
-          console.error("Color extraction failed:", e);
-        }
+          const quickPalette = colorThief.getPalette(img, 6, 8);
+          const [qr, qg, qb] = pickVibrantColor(quickPalette);
+          const [qh] = rgbToHsl(qr, qg, qb);
+          const qAccent = pickAccentColor(quickPalette, qh);
+          setAlbumColorVars(qr, qg, qb, ...(qAccent ?? [qr, qg, qb]));
+        } catch (e) {}
 
         const colorGen = musicGeneration;
         setTimeout(() => {
@@ -3109,7 +3084,7 @@
             const faccent = pickAccentColor(fullPalette, fph);
             setAlbumColorVars(fpr[0], fpr[1], fpr[2], ...(faccent ?? fpr));
           } catch (e) {}
-        }, 2500);
+        }, 1000);
       }
 
       function clearDeferredCoverFallback() {
