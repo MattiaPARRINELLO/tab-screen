@@ -3060,19 +3060,7 @@
         return canvas;
       }
 
-      function applyAlbumColors(img) {
-        if (PERF.tier >= 4) return;
-        const colorThief = new ColorThief();
-        const srcImg = PERF.tier >= 3 ? downscaleImage(img, 32) : img;
-        const palette = colorThief.getPalette(srcImg, 8, 1);
-
-        const [pr, pg, pb] = pickVibrantColor(palette);
-        const [ph] = rgbToHsl(pr, pg, pb);
-
-        const accent = pickAccentColor(palette, ph);
-        const [ar, ag, ab] = accent ?? [pr, pg, pb];
-
-        // Propager couleur primaire et accent via CSS vars
+      function setAlbumColorVars(pr, pg, pb, ar, ag, ab) {
         const root = document.documentElement;
         root.style.setProperty("--album-r", pr);
         root.style.setProperty("--album-g", pg);
@@ -3080,16 +3068,30 @@
         root.style.setProperty("--album-ar", ar);
         root.style.setProperty("--album-ag", ag);
         root.style.setProperty("--album-ab", ab);
-
-        // Le thème est entièrement piloté par vars CSS pour lisser
-        // les transitions de couleur sans saut visuel.
         document.body.classList.add("music-theme-active");
         albumColorWash.classList.add("active");
+        document.querySelectorAll(".bg-orb").forEach((o) => o.classList.add("active"));
+      }
 
-        // Activer les orbes animés
-        document
-          .querySelectorAll(".bg-orb")
-          .forEach((o) => o.classList.add("active"));
+      function applyAlbumColors(img) {
+        const colorThief = new ColorThief();
+        const smallSrc = downscaleImage(img, 32);
+        const quickPalette = colorThief.getPalette(smallSrc, 8, 1);
+        const [pr, pg, pb] = pickVibrantColor(quickPalette);
+        const [ph] = rgbToHsl(pr, pg, pb);
+        const accent = pickAccentColor(quickPalette, ph);
+        setAlbumColorVars(pr, pg, pb, ...(accent ?? [pr, pg, pb]));
+
+        const colorGen = musicGeneration;
+        setTimeout(() => {
+          if (colorGen !== musicGeneration) return;
+          const fullPalette = colorThief.getPalette(img, 8, 1);
+          if (colorGen !== musicGeneration) return;
+          const fpr = pickVibrantColor(fullPalette);
+          const [fph] = rgbToHsl(fpr[0], fpr[1], fpr[2]);
+          const faccent = pickAccentColor(fullPalette, fph);
+          setAlbumColorVars(fpr[0], fpr[1], fpr[2], ...(faccent ?? fpr));
+        }, 2500);
       }
 
       function clearDeferredCoverFallback() {
