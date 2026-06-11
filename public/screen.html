@@ -2197,7 +2197,7 @@
           document.documentElement.style.removeProperty('--theme-transition');
         }
 
-        console.log('[perf] tier', PERF.tier, '->', newTier, PERF.manualOverride ? '(manual)' : '(auto)');
+        if (PERF.tier < 3) console.log('[perf] tier', PERF.tier, '->', newTier, PERF.manualOverride ? '(manual)' : '(auto)');
         PERF.tier = newTier;
         PERF.lastTierChange = now;
         PERF.lowFpsStart = 0;
@@ -2255,7 +2255,7 @@
             PERF.highFpsStart = 0;
           } else if (now - PERF.lowFpsStart >= 3000) {
             PERF.lowFpsStart = 0;
-            console.log('[perf] low FPS sustained (avg', Math.round(avgFps), 'fps) — degrading to tier', PERF.tier + 1);
+            if (PERF.tier < 2) console.log('[perf] low FPS sustained (avg', Math.round(avgFps), 'fps) — degrading to tier', PERF.tier + 1);
             if (PERF.tier < 4) perfSetTier(PERF.tier + 1);
           }
         } else {
@@ -2267,7 +2267,7 @@
             PERF.highFpsStart = now;
           } else if (now - PERF.highFpsStart >= 5000) {
             PERF.highFpsStart = 0;
-            console.log('[perf] FPS recovered (avg', Math.round(avgFps), 'fps) — upgrading to tier', PERF.tier - 1);
+            if (PERF.tier < 2) console.log('[perf] FPS recovered (avg', Math.round(avgFps), 'fps) — upgrading to tier', PERF.tier - 1);
             if (PERF.tier > 0) perfSetTier(PERF.tier - 1);
           }
         } else {
@@ -2291,7 +2291,7 @@
             PERF.manualOverride = false;
             btn.classList.remove('manual-active');
             PERF.manualTimer = null;
-            console.log('[perf] manual override expired — auto-mode resumed');
+            if (PERF.tier < 3) console.log('[perf] manual override expired — auto-mode resumed');
           }, PERF.MANUAL_TIMEOUT);
         });
       }
