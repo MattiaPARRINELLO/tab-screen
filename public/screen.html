@@ -2891,7 +2891,7 @@
 
       function canAnimateSongChange() {
         const prefersReduced = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-        return !prefersReduced && !musicCard.classList.contains("hidden") && PERF.tier < 4;
+        return !prefersReduced && !musicCard.classList.contains("hidden") && PERF.tier < 3;
       }
 
       function glideProgressBar(fromPct, toPct, durationMs) {
