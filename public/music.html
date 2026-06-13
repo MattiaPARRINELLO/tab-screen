@@ -969,7 +969,7 @@
         if (musicDurationEl) musicDurationEl.textContent = "0:00";
         updateIdleTime();
         if (idleTimer) clearInterval(idleTimer);
-        idleTimer = setInterval(updateIdleTime, 30000);
+        idleTimer = setInterval(updateIdleTime, 1000);
       }
 
       // ========== IDLE TIME DISPLAY ==========
@@ -1063,7 +1063,7 @@
         if (lastMusicEndAt) {
           updateIdleTime();
           if (idleTimer) clearInterval(idleTimer);
-          idleTimer = setInterval(updateIdleTime, 30000);
+          idleTimer = setInterval(updateIdleTime, 1000);
         }
       });
     </script>

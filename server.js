@@ -448,7 +448,10 @@ app.post('/api/music', async (req, res) => {
     if (!title || !artist) return res.sendStatus(400);
 
     // Si un morceau était en cours, enregistrer quand il s'est arrêté
-    if (currentMusic.title) { lastMusicEndAt = Date.now(); saveLastMusicEndAt(); }
+    if (currentMusic.title) {
+        lastMusicEndAt = (currentMusic.startTime || Date.now()) + (currentMusic.duration - currentMusic.position) * 1000;
+        saveLastMusicEndAt();
+    }
 
     const fetchGen = ++musicFetchGen;
     const startTime = Date.now();
@@ -466,6 +469,7 @@ app.post('/api/music', async (req, res) => {
     // Répondre et émettre immédiatement (sans attendre la cover)
     res.sendStatus(200);
     io.emit('musicData', currentMusic);
+    io.emit('musicStateEnded', { lastMusicEndAt });
 
     // Chercher la cover de façon asynchrone, puis réémettre si trouvée
     fetchCover(title, artist).then(cover => {
@@ -575,9 +579,12 @@ io.on('connection', socket => {
         const adjustedPosition = currentMusic.position + elapsed;
         if (adjustedPosition < currentMusic.duration) {
             socket.emit('musicData', { ...currentMusic, position: adjustedPosition });
-        } else if (lastMusicEndAt === null) {
-            lastMusicEndAt = (currentMusic.startTime || Date.now()) + (currentMusic.duration - currentMusic.position) * 1000;
-            saveLastMusicEndAt();
+        } else {
+            if (lastMusicEndAt === null) {
+                lastMusicEndAt = (currentMusic.startTime || Date.now()) + (currentMusic.duration - currentMusic.position) * 1000;
+                saveLastMusicEndAt();
+            }
+            socket.emit('musicStateEnded', { lastMusicEndAt });
         }
     }
 
