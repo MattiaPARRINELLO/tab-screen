@@ -3502,8 +3502,24 @@
         }
 
         // Show music card with animation
+        // On écoute la fin de l'animation CSS cardEnter pour ajouter
+        // .entered au moment exact où le blur disparaît, plutôt qu'avec
+        // un setTimeout arbitraire qui peut être interrompu.
+        const onCardEntered = () => {
+          if (!musicCard.classList.contains("hidden")) {
+            musicCard.classList.add("entered");
+          }
+        };
+        musicCard.addEventListener("animationend", onCardEntered, { once: true });
         musicCard.classList.remove("hidden");
-        setTimeout(() => musicCard.classList.add("entered"), 1000);
+        // Fallback si l'animation ne se déclenche pas (carte déjà visible,
+        // prefers-reduced-motion, ou animation annulée par un appel suivant).
+        setTimeout(() => {
+          musicCard.removeEventListener("animationend", onCardEntered);
+          if (!musicCard.classList.contains("hidden") && !musicCard.classList.contains("entered")) {
+            musicCard.classList.add("entered");
+          }
+        }, 1000);
         updateForecastLayout();
 
         // Smooth progress animation (throttled)
